@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+# Rokkit - Dotfiles Backup CLI
+# A simple tool to manage and backup your dotfiles
+
+set -euo pipefail
+
+# Configuration
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="${SCRIPT_DIR}/config/dotfiles.conf"
+DOTFILES_DIR="${SCRIPT_DIR}/dotfiles"
+
+# Colors for output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Functions
+print_success() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+print_info() {
+    echo -e "${BLUE}➜${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}✗${NC} $1"
+}
+
+show_help() {
+    cat << EOF
+Rokkit - Dotfiles Backup CLI
+
+Usage: rokkit <command>
+
+Commands:
+    backup      Backup dotfiles listed in dotfiles.conf
+    restore     Restore dotfiles from backup to your system
+    help        Show this help message
+
+Configuration:
+    Edit config/dotfiles.conf to specify which dotfiles to track
+
+EOF
+}
+
+# Source command files
+if [[ ! -f "${SCRIPT_DIR}/commands/backup.sh" ]] || [[ ! -f "${SCRIPT_DIR}/commands/restore.sh" ]]; then
+    print_error "Command files missing. Please ensure commands/ directory exists with backup.sh and restore.sh"
+    exit 1
+fi
+
+source "${SCRIPT_DIR}/commands/backup.sh"
+source "${SCRIPT_DIR}/commands/restore.sh"
+
+# Main script logic
+case "${1:-}" in
+    backup)
+        backup_dotfiles
+        ;;
+    restore)
+        restore_dotfiles
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    "")
+        show_help
+        exit 1
+        ;;
+    *)
+        print_error "Unknown command: $1"
+        echo ""
+        show_help
+        exit 1
+        ;;
+esac

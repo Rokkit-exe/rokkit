@@ -1,0 +1,29 @@
+# Rokkit .gitignore
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# Logs
+*.log
+
+# Android SDK (from scripts)
+scripts/cmdline-tools/
+
+# Local configuration overrides
+config/*.local.conf
+
+# agent files
+AGENT.md
