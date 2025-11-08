@@ -1,12 +1,13 @@
 # Rokkit
 
-A simple bash CLI tool for backing up and managing your dotfiles.
+A simple bash CLI tool for backing up and managing your dotfiles and system packages.
 
 ## Features
 
 - Backup dotfiles and directories to a centralized location
 - Restore dotfiles from backup to your system
-- Simple configuration via `dotfiles.conf`
+- Install packages from a package list using yay
+- Simple configuration via `dotfiles.conf` and `packages.conf`
 - Color-coded output with success/warning/error messages
 - Automatic directory structure preservation
 - Safety confirmation before restore operations
@@ -49,6 +50,20 @@ This command will:
 - Show a summary of restored, skipped, and failed items
 
 **Warning:** This will overwrite your current dotfiles! Make sure you have a recent backup.
+
+### Install Packages
+
+```bash
+./rokkit install
+```
+
+This command will:
+- Read all package names from `config/packages.conf`
+- Install all packages using `yay -S --needed --noconfirm`
+- Skip packages that are already installed (thanks to `--needed` flag)
+- Show installation progress and summary
+
+**Note:** Requires `yay` to be installed on your system.
 
 ### Show Help
 
@@ -96,6 +111,7 @@ rokkit/
 
 - Bash 4.0+
 - Standard Unix utilities (cp, mkdir, dirname)
+- yay (AUR helper) - required for the install command
 
 ## License
 

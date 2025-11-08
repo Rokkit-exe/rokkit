@@ -43,22 +43,25 @@ Usage: rokkit <command>
 Commands:
     backup      Backup dotfiles listed in dotfiles.conf
     restore     Restore dotfiles from backup to your system
+    install     Install packages listed in packages.conf using yay
     help        Show this help message
 
 Configuration:
     Edit config/dotfiles.conf to specify which dotfiles to track
+    Edit config/packages.conf to specify which packages to install
 
 EOF
 }
 
 # Source command files
-if [[ ! -f "${SCRIPT_DIR}/commands/backup.sh" ]] || [[ ! -f "${SCRIPT_DIR}/commands/restore.sh" ]]; then
-    print_error "Command files missing. Please ensure commands/ directory exists with backup.sh and restore.sh"
+if [[ ! -f "${SCRIPT_DIR}/commands/backup.sh" ]] || [[ ! -f "${SCRIPT_DIR}/commands/restore.sh" ]] || [[ ! -f "${SCRIPT_DIR}/commands/install.sh" ]]; then
+    print_error "Command files missing. Please ensure commands/ directory exists with backup.sh, restore.sh, and install.sh"
     exit 1
 fi
 
 source "${SCRIPT_DIR}/commands/backup.sh"
 source "${SCRIPT_DIR}/commands/restore.sh"
+source "${SCRIPT_DIR}/commands/install.sh"
 
 # Main script logic
 case "${1:-}" in
@@ -67,6 +70,9 @@ case "${1:-}" in
         ;;
     restore)
         restore_dotfiles
+        ;;
+    install)
+        install_packages
         ;;
     help|--help|-h)
         show_help
