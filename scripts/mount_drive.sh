@@ -6,29 +6,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/../config/drive.conf"
 
-# Colors for output
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
-
-# Output functions
-print_success() {
-    echo -e "${GREEN}✓${NC} $1"
-}
-
-print_info() {
-    echo -e "${BLUE}➜${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}✗${NC} $1"
-}
+# Load common library
+source "${SCRIPT_DIR}/../lib/common.sh"
 
 # ---- Configuration Loading ----
 
@@ -92,8 +71,7 @@ fi
 
 # ---- Display Configuration ----
 
-echo ""
-echo "═══════════════════════════════════════════════════"
+print_title "Drive Mount Setup"
 if [[ -n "$DEVICE_LABEL" ]]; then
     echo "  Drive: $DEVICE_LABEL"
 fi
@@ -101,7 +79,6 @@ echo "  UUID:       $UUID"
 echo "  Mount:      $MOUNT_POINT"
 echo "  Filesystem: $FILESYSTEM"
 echo "  Options:    $MOUNT_OPTIONS"
-echo "═══════════════════════════════════════════════════"
 echo ""
 
 # ---- Verify Drive Exists ----

@@ -309,6 +309,8 @@ The `backgrounds/` directory contains curated wallpapers:
 ```
 rokkit/
 ├── rokkit                          # Main CLI executable
+├── lib/                            # Shared library functions
+│   └── common.sh                   # Common functions for all scripts
 ├── commands/                       # Command implementations
 │   ├── init.sh                     # Complete system initialization
 │   ├── backup.sh                   # Backup command
@@ -343,6 +345,43 @@ rokkit/
 └── services/                       # Systemd service files
     └── disable-usb-wakeup.service # USB wake disable service
 ```
+
+## Shared Library
+
+The `lib/common.sh` library provides reusable functions for all scripts:
+
+**Output Functions:**
+- `print_success` - Green checkmark messages
+- `print_info` - Blue arrow messages
+- `print_warning` - Yellow warning messages
+- `print_error` - Red error messages
+
+**Validation:**
+- `require_command` - Check if command exists
+- `require_sudo` - Check sudo privileges
+- `validate_config_file` - Validate config file exists and is readable
+
+**Network Operations:**
+- `download_with_retry` - Download with retry logic and timeout
+- `verify_checksum` - SHA256 checksum verification
+
+**Disk Management:**
+- `check_disk_space` - Verify sufficient disk space before operations
+
+**File Operations:**
+- `create_backup` - Create timestamped backups
+- `restore_backup` - Restore from backup
+
+**Process Management:**
+- `check_lock` - Prevent concurrent script execution
+- `release_lock` - Release lock file
+
+**Shell Configuration:**
+- `get_shell_rc` - Get appropriate RC file (.zshrc or .bashrc)
+- `update_rc_block` - Update managed block in RC file
+
+**Logging:**
+- `log_message` - Centralized logging to `~/.rokkit/rokkit.log`
 
 ## Requirements
 
