@@ -153,33 +153,123 @@ spotify
 zoom
 ```
 
+### Drive Mount Configuration
+
+Edit `config/drive.conf` to configure automatic drive mounting (used by `scripts/mount_drive.sh`).
+
+Example:
+```
+UUID=1aa44f69-7eed-4464-9b6f-8a847f9b8366
+MOUNT_POINT=/mnt/storage
+FILESYSTEM=ext4
+MOUNT_OPTIONS=defaults,nofail
+DEVICE_LABEL=Storage Drive
+```
+
+**Note:** Find your drive's UUID with: `lsblk -f` or `blkid`
+
 Lines starting with `#` are comments and will be ignored in all configuration files.
 
 ## Utility Scripts
 
-Rokkit includes several utility scripts in the `scripts/` directory:
+Rokkit includes several idempotent utility scripts in the `scripts/` directory. All scripts feature:
+- Clean, color-coded console output with clear status messages
+- Safe to run multiple times (idempotent)
+- Automatic checks to skip already-completed steps
+- Proper error handling and validation
 
-### Setup & Installation
-- **setup_zsh.sh**: Install ZSH, Oh-My-ZSH, Powerlevel10k theme, and essential plugins
-- **install_nerd_fonts.sh**: Download and install popular Nerd Fonts (FiraCode, JetBrainsMono, Meslo, Noto, AdwaitaMono)
-- **install_cider.sh**: Install Cider music player
+### Setup & Installation Scripts
+
+#### setup_zsh.sh
+Automated ZSH setup with modern shell environment:
+- Installs ZSH (supports Arch Linux, Ubuntu, Debian)
+- Sets ZSH as default shell
+- Installs Oh-My-ZSH framework
+- Installs essential plugins (syntax highlighting, autosuggestions, completions)
+- Installs Powerlevel10k theme
+- Provides next-steps guidance for configuration
+
+```bash
+./scripts/setup_zsh.sh
+```
+
+#### install_cider.sh
+Install Cider music player from local package:
+- Checks if Cider is already installed
+- Verifies package file exists at `/mnt/storage/cider/`
+- Installs using pacman
+- Displays installed version
+
+```bash
+./scripts/install_cider.sh
+```
+
+#### install_nerd_fonts.sh
+Download and install popular Nerd Fonts (FiraCode, JetBrainsMono, Meslo, Noto, AdwaitaMono)
+
+```bash
+./scripts/install_nerd_fonts.sh
+```
+
+### System Management Scripts
+
+#### mount_drive.sh
+Mount a drive and add it to /etc/fstab for automatic boot mounting:
+- Reads configuration from `config/drive.conf`
+- Verifies drive exists before mounting
+- Creates mount point if needed
+- Checks if already mounted (prevents conflicts)
+- Backs up /etc/fstab before modifications
+- Validates fstab configuration
+- Shows drive status with df
+
+**Configuration**: Edit `config/drive.conf` with your drive details:
+```
+UUID=your-drive-uuid-here
+MOUNT_POINT=/mnt/storage
+FILESYSTEM=ext4
+MOUNT_OPTIONS=defaults,nofail
+DEVICE_LABEL=Storage Drive
+```
+
+**Usage**:
+```bash
+# Find your drive UUID first
+lsblk -f
+
+# Edit config/drive.conf with your UUID
+nano config/drive.conf
+
+# Run the script (idempotent - safe to run multiple times)
+./scripts/mount_drive.sh
+```
+
+#### disable_usb.sh
+Setup systemd service to prevent USB devices (keyboard) from waking system after suspend:
+- Installs wake disable script to `/usr/local/bin/`
+- Installs and enables systemd service
+- Disables wake for USB devices: XHC0, XHC1, XHC2
+- Shows before/after wake status
+- Runs automatically on boot
+
+```bash
+./scripts/disable_usb.sh
+```
+
+### Development Tools Scripts
+
 - **install_flutter_sdk.sh**: Install Flutter SDK for mobile development
 - **install_sdk_manager.sh**: Install Android SDK Manager
 - **install-android-tools.sh**: Install Android development tools
 
-### System Management
-- **disable_usb_wake.sh**: Disable USB devices from waking the system
-- **disable_usb.sh**: Disable specific USB devices
-- **mount_drive.sh**: Utility for mounting drives
+### Making Scripts Executable
 
-### Usage
 ```bash
-# Make scripts executable
+# Make all scripts executable
 chmod +x scripts/*.sh
 
-# Run any script directly
-./scripts/setup_zsh.sh
-./scripts/install_nerd_fonts.sh
+# Or make individual scripts executable
+chmod +x scripts/setup_zsh.sh
 ```
 
 ## Additional Resources
@@ -217,7 +307,8 @@ rokkit/
 ├── config/
 │   ├── dotfiles.conf               # Dotfiles configuration
 │   ├── packages.conf               # Packages to install
-│   └── uninstall-packages.conf     # Packages to uninstall
+│   ├── uninstall-packages.conf     # Packages to uninstall
+│   └── drive.conf                  # Drive mount configuration
 ├── dotfiles/                       # Backup destination (created automatically)
 │   └── .config/                    # Configuration files backup
 │       ├── hypr/                   # Hyprland configuration
@@ -230,15 +321,15 @@ rokkit/
 │       └── waybar/                 # Waybar config with custom scripts
 ├── backgrounds/                    # Wallpaper collection
 ├── scripts/                        # Utility installation scripts
-│   ├── setup_zsh.sh               # ZSH setup with Oh-My-ZSH
+│   ├── setup_zsh.sh               # ZSH setup with Oh-My-ZSH (idempotent)
 │   ├── install_nerd_fonts.sh      # Nerd Fonts installer
-│   ├── install_cider.sh           # Cider music player
+│   ├── install_cider.sh           # Cider music player (idempotent)
 │   ├── install_flutter_sdk.sh     # Flutter SDK
 │   ├── install_sdk_manager.sh     # Android SDK Manager
 │   ├── install-android-tools.sh   # Android tools
-│   ├── disable_usb_wake.sh        # Disable USB wake
-│   ├── disable_usb.sh             # Disable USB devices
-│   └── mount_drive.sh             # Drive mounting
+│   ├── disable_usb_wake.sh        # USB wake disable helper script
+│   ├── disable_usb.sh             # USB wake setup (idempotent)
+│   └── mount_drive.sh             # Drive mounting with config (idempotent)
 └── services/                       # Systemd service files
     └── disable-usb-wakeup.service # USB wake disable service
 ```

@@ -8,4 +8,3 @@ ExecStart=/usr/local/bin/disable-usb-wake.sh
 
 [Install]
 WantedBy=multi-user.target
-
