@@ -1,146 +1,274 @@
 #!/usr/bin/env bash
+
 set -euo pipefail
 
-# ---- usage -----------------------------------------------------------------
-show_usage() {
-  cat <<EOF
-Install Flutter SDK - Download and install Flutter SDK to /opt/flutter
+# Colors for output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
-USAGE:
-  $0 <flutter_sdk_tar_url>
-  $0 [OPTIONS]
-
-ARGUMENTS:
-  flutter_sdk_tar_url    URL to Flutter SDK tarball (.tar.xz or .tar.gz)
-
-OPTIONS:
-  -h, --help             Show this help message
-
-DESCRIPTION:
-  Downloads Flutter SDK from the provided URL and installs it to /opt/flutter.
-  Creates a symlink at /usr/local/bin/flutter for easy access.
-  Updates your shell RC file (.zshrc or .bashrc) with PATH configuration.
-
-EXAMPLES:
-  $0 https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.35.7-stable.tar.xz
-
-FIND TARBALL:
-  https://docs.flutter.dev/install/manual
-
-EOF
+# Output functions
+print_success() {
+    echo -e "${GREEN}✓${NC} $1"
 }
 
-# ---- Parse arguments -------------------------------------------------------
-if [ "$#" -eq 0 ]; then
-  show_usage
-  exit 1
-fi
+print_info() {
+    echo -e "${BLUE}➜${NC} $1"
+}
 
-for arg in "$@"; do
-  case "$arg" in
-    -h|--help)
-      show_usage
-      exit 0
-      ;;
-  esac
-done
+print_warning() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
 
-SDK_URL="$1"
+print_error() {
+    echo -e "${RED}✗${NC} $1"
+}
 
-# ---- helpers ---------------------------------------------------------------
-msg(){ printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
-die(){ printf '\n\033[1;31m!! %s\033[0m\n' "$*" >&2; exit 1; }
+# Constants
+INSTALL_DIR="/opt/flutter"
+BIN_SYMLINK="/usr/local/bin/flutter"
+MARK_START="# >>> FLUTTER (managed by install_flutter_sdk.sh) >>>"
+MARK_END="# <<< FLUTTER (managed by install_flutter_sdk.sh) <<<"
 
-# pick rc file
-SHELL_NAME="$(basename "${SHELL:-sh}")"
-if [ "$SHELL_NAME" = "zsh" ]; then
-  RCFILE="$HOME/.zshrc"
+# Determine shell RC file
+SHELL_NAME="$(basename "${SHELL:-bash}")"
+if [[ "$SHELL_NAME" == "zsh" ]]; then
+    RCFILE="$HOME/.zshrc"
 else
-  RCFILE="$HOME/.bashrc"
+    RCFILE="$HOME/.bashrc"
 fi
 
-# constants/paths
-INSTALL_DIR="/opt/flutter"                 # flutter tree lives here
-BIN_SYMLINK="/usr/local/bin/flutter"       # user-facing executable
-MARK_START="# >>> FLUTTER (managed by setup-flutter) >>>"
-MARK_END="# <<< FLUTTER (managed by setup-flutter) <<<"
+# ---- Header ----
+echo ""
+echo "═══════════════════════════════════════════════════"
+echo "  Flutter SDK Installation"
+echo "═══════════════════════════════════════════════════"
+echo ""
 
-# ---- prerequisites ---------------------------------------------------------
-msg "Installing prerequisites (requires sudo)"
-if ! command -v sudo >/dev/null 2>&1; then
-  die "sudo not found; install it and re-run."
+# ---- Check if already installed ----
+if [[ -d "$INSTALL_DIR" ]] && [[ -f "$INSTALL_DIR/bin/flutter" ]]; then
+    print_success "Flutter SDK is already installed"
+    
+    # Export PATH for current session to check version
+    export PATH="/usr/local/bin:$INSTALL_DIR/bin:$PATH"
+    
+    if command -v flutter &>/dev/null; then
+        CURRENT_VERSION=$(flutter --version 2>&1 | grep "Flutter" | head -n1 || echo "unknown")
+        print_info "$CURRENT_VERSION"
+        print_info "Location: $INSTALL_DIR"
+        echo ""
+        
+        read -p "Do you want to update to the latest stable version? (y/N): " -n 1 -r
+        echo ""
+        
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            print_info "Installation skipped"
+            echo ""
+            exit 0
+        fi
+    fi
 fi
-# wget + basic build deps recommended by flutter doctor for Linux desktop
-sudo pacman -Syu --needed --noconfirm wget tar cmake ninja pkgconf mesa-utils
 
-# ---- download to temp ------------------------------------------------------
+# ---- Fetch latest stable version ----
+print_info "Fetching latest Flutter stable release information..."
+
+# Flutter releases API endpoint
+RELEASES_URL="https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json"
+
+# Fetch and parse the latest stable version for Linux
+FLUTTER_DATA=$(curl -sL "$RELEASES_URL" || true)
+
+if [[ -z "$FLUTTER_DATA" ]]; then
+    print_error "Could not fetch Flutter release information"
+    print_info "Please visit: https://docs.flutter.dev/release/archive"
+    print_info "And run this script with the tarball URL as an argument:"
+    print_info "  $0 <flutter-tarball-url>"
+    echo ""
+    exit 1
+fi
+
+# Extract the latest stable release info
+SDK_URL=$(echo "$FLUTTER_DATA" | grep -oP '"archive":\s*"\K[^"]+' | grep "stable/linux" | head -n1 || true)
+
+if [[ -z "$SDK_URL" ]]; then
+    print_error "Could not parse latest stable release URL"
+    exit 1
+fi
+
+# Prepend base URL if needed
+if [[ "$SDK_URL" != http* ]]; then
+    SDK_URL="https://storage.googleapis.com/flutter_infra_release/releases/$SDK_URL"
+fi
+
+# Extract version from URL
+VERSION=$(echo "$SDK_URL" | grep -oP 'flutter_linux_\K[^.]+\.[^.]+\.[^-]+(?=-stable)' || echo "latest")
+print_success "Found latest stable version: $VERSION"
+print_info "Download URL: $SDK_URL"
+echo ""
+
+# ---- Install prerequisites ----
+print_info "Checking prerequisites..."
+
+MISSING_DEPS=()
+command -v wget &>/dev/null || MISSING_DEPS+=("wget")
+command -v tar &>/dev/null || MISSING_DEPS+=("tar")
+command -v cmake &>/dev/null || MISSING_DEPS+=("cmake")
+command -v ninja &>/dev/null || MISSING_DEPS+=("ninja")
+command -v pkg-config &>/dev/null || MISSING_DEPS+=("pkgconf")
+
+if [[ ${#MISSING_DEPS[@]} -gt 0 ]]; then
+    print_info "Installing missing dependencies: ${MISSING_DEPS[*]}"
+    sudo pacman -S --needed --noconfirm "${MISSING_DEPS[@]}"
+    print_success "Dependencies installed"
+else
+    print_success "All prerequisites satisfied"
+fi
+
+# ---- Download Flutter SDK ----
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
-TAR_NAME="$(basename "$SDK_URL")"
+TAR_NAME="flutter_linux_${VERSION}-stable.tar.xz"
 TAR_PATH="$TMPDIR/$TAR_NAME"
 
-msg "Downloading Flutter SDK: $SDK_URL"
-wget -qO "$TAR_PATH" "$SDK_URL" || die "Failed to download Flutter SDK."
+print_info "Downloading Flutter SDK..."
+if wget -q --show-progress -O "$TAR_PATH" "$SDK_URL"; then
+    print_success "Download complete"
+else
+    print_error "Failed to download Flutter SDK"
+    exit 1
+fi
 
-# ---- extract & stage -------------------------------------------------------
-msg "Extracting Flutter SDK (staged)"
-# tarball contains a top-level 'flutter' dir
-tar -xJf "$TAR_PATH" -C "$TMPDIR" 2>/dev/null || tar -xzf "$TAR_PATH" -C "$TMPDIR" 2>/dev/null || die "Unknown archive format."
-[ -d "$TMPDIR/flutter" ] || die "Expected 'flutter' directory in archive."
+# ---- Extract Flutter SDK ----
+print_info "Extracting Flutter SDK..."
+
+# Try .xz first, then .gz
+if tar -xJf "$TAR_PATH" -C "$TMPDIR" 2>/dev/null; then
+    print_success "Extraction complete"
+elif tar -xzf "$TAR_PATH" -C "$TMPDIR" 2>/dev/null; then
+    print_success "Extraction complete"
+else
+    print_error "Failed to extract archive (unknown format)"
+    exit 1
+fi
+
+if [[ ! -d "$TMPDIR/flutter" ]]; then
+    print_error "Expected 'flutter' directory not found in archive"
+    exit 1
+fi
 
 STAGE_DIR="$TMPDIR/flutter"
 
-# ---- install atomically ----------------------------------------------------
-msg "Installing to $INSTALL_DIR (requires sudo)"
-sudo mkdir -p "$(dirname "$INSTALL_DIR")"
-if [ -d "$INSTALL_DIR" ]; then
-  sudo rm -rf "${INSTALL_DIR}.bak" || true
-  sudo mv "$INSTALL_DIR" "${INSTALL_DIR}.bak"
-fi
-sudo mv "$STAGE_DIR" "$INSTALL_DIR"
-[ -d "${INSTALL_DIR}.bak" ] && sudo rm -rf "${INSTALL_DIR}.bak" || true
+# ---- Install Flutter SDK ----
+print_info "Installing Flutter to $INSTALL_DIR..."
 
-# ---- symlink ---------------------------------------------------------------
-msg "Linking $BIN_SYMLINK -> $INSTALL_DIR/bin/flutter"
+# Backup existing installation if present
+if [[ -d "$INSTALL_DIR" ]]; then
+    BACKUP_DIR="${INSTALL_DIR}.backup.$(date +%s)"
+    print_info "Backing up existing installation to: $BACKUP_DIR"
+    sudo mv "$INSTALL_DIR" "$BACKUP_DIR" || {
+        print_error "Failed to backup existing installation"
+        exit 1
+    }
+fi
+
+# Install new version
+sudo mkdir -p "$(dirname "$INSTALL_DIR")"
+sudo mv "$STAGE_DIR" "$INSTALL_DIR" || {
+    print_error "Failed to install Flutter"
+    # Restore backup if installation failed
+    if [[ -d "$BACKUP_DIR" ]]; then
+        sudo mv "$BACKUP_DIR" "$INSTALL_DIR"
+        print_info "Restored previous installation"
+    fi
+    exit 1
+}
+
+print_success "Flutter installed to: $INSTALL_DIR"
+
+# Clean up old backup if new installation succeeded
+if [[ -d "$BACKUP_DIR" ]]; then
+    sudo rm -rf "$BACKUP_DIR"
+fi
+
+# ---- Create symlink ----
+print_info "Creating symlink: $BIN_SYMLINK"
 sudo mkdir -p "$(dirname "$BIN_SYMLINK")"
 sudo ln -sf "$INSTALL_DIR/bin/flutter" "$BIN_SYMLINK"
+print_success "Symlink created"
 
-# ---- shell rc block (no duplicates) ---------------------------------------
-msg "Adding PATH to $RCFILE"
-if [ -f "$RCFILE" ] && grep -qF "$MARK_START" "$RCFILE"; then
-  # remove existing managed block
-  awk -v s="$MARK_START" -v e="$MARK_END" '
-    $0==s {skip=1}
-    !skip {print}
-    $0==e {skip=0}
-  ' "$RCFILE" > "$RCFILE.tmp" && mv "$RCFILE.tmp" "$RCFILE"
+# ---- Setup environment variables ----
+print_info "Configuring environment variables..."
+
+# Update RC file
+if [[ -f "$RCFILE" ]]; then
+    # Remove old managed block if exists
+    if grep -qF "$MARK_START" "$RCFILE" 2>/dev/null; then
+        print_info "Removing old environment configuration from $RCFILE"
+        awk -v s="$MARK_START" -v e="$MARK_END" '
+            $0==s {skip=1}
+            !skip {print}
+            $0==e {skip=0; next}
+        ' "$RCFILE" > "$RCFILE.tmp" && mv "$RCFILE.tmp" "$RCFILE"
+    fi
 fi
 
-cat >> "$RCFILE" <<'EOF'
+# Add new configuration
+cat >> "$RCFILE" <<EOF
 
-# >>> FLUTTER (managed by setup-flutter) >>>
-# Prefer symlinked flutter first; fall back to /opt/flutter/bin explicitly
+$MARK_START
+# Flutter SDK PATH configuration
 if ! command -v flutter >/dev/null 2>&1; then
-  export PATH="/usr/local/bin:$PATH"
+  export PATH="/usr/local/bin:\$PATH"
 fi
-if [ -d "/opt/flutter/bin" ] && [[ ":$PATH:" != *":/opt/flutter/bin:"* ]]; then
-  export PATH="/opt/flutter/bin:$PATH"
+if [[ -d "/opt/flutter/bin" ]] && [[ ":\$PATH:" != *":/opt/flutter/bin:"* ]]; then
+  export PATH="/opt/flutter/bin:\$PATH"
 fi
-# <<< FLUTTER (managed by setup-flutter) <<<
+$MARK_END
 EOF
 
-# ---- current shell PATH ----------------------------------------------------
-export PATH="/usr/local/bin:/opt/flutter/bin:$PATH"
+print_success "Environment configured in $RCFILE"
 
-# ---- quick sanity checks ---------------------------------------------------
-msg "Verifying Flutter"
-which flutter || die "flutter not found on PATH"
-readlink -f "$(command -v flutter)"
-flutter --version
+# Export for current session
+export PATH="/usr/local/bin:$INSTALL_DIR/bin:$PATH"
 
-msg "Running flutter doctor (non-fatal if Android pieces missing)"
-flutter doctor -v || true
+# ---- Verify installation ----
+print_info "Verifying Flutter installation..."
 
-msg "Done! Open a NEW shell so $RCFILE changes take effect."
+if command -v flutter &>/dev/null; then
+    FLUTTER_PATH=$(which flutter)
+    print_success "Flutter found at: $FLUTTER_PATH"
+    
+    print_info "Flutter version:"
+    flutter --version
+    echo ""
+else
+    print_error "Flutter not found in PATH"
+    exit 1
+fi
 
+# ---- Run Flutter doctor ----
+print_info "Running Flutter doctor to check setup..."
+echo ""
+flutter doctor -v || print_warning "Flutter doctor reported some issues (this is normal for initial setup)"
+
+# ---- Summary ----
+echo ""
+echo "═══════════════════════════════════════════════════"
+print_success "Flutter SDK installation complete!"
+echo "═══════════════════════════════════════════════════"
+echo ""
+print_info "Installation location: $INSTALL_DIR"
+print_info "Symlink created: $BIN_SYMLINK"
+print_info "Environment configured in: $RCFILE"
+echo ""
+print_info "Next steps:"
+echo "  1. Open a new terminal or run: source $RCFILE"
+echo "  2. Verify Flutter: flutter --version"
+echo "  3. Check setup: flutter doctor"
+echo "  4. Accept Android licenses (if Android SDK installed):"
+echo "     flutter doctor --android-licenses"
+echo "  5. Create your first app: flutter create my_app"
+echo ""

@@ -49,7 +49,9 @@ This command will perform a complete system setup in the following order:
 4. **Mount** storage drive (configured in `config/drive.conf`)
 5. **Disable** USB wake to prevent keyboard from waking system
 6. **Setup** ZSH with Oh-My-ZSH, plugins, and Powerlevel10k theme
-7. **Install** Cider music player
+7. **Install** Android SDK Manager (latest stable version)
+8. **Install** Flutter SDK (latest stable version)
+9. **Install** Cider music player
 
 **Use this when:**
 - Setting up a fresh Arch Linux installation

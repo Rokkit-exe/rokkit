@@ -16,7 +16,9 @@ init_system() {
     echo "  4. Mount storage drive"
     echo "  5. Disable USB wake"
     echo "  6. Setup ZSH environment"
-    echo "  7. Install Cider music player"
+    echo "  7. Install Android SDK Manager"
+    echo "  8. Install Flutter SDK"
+    echo "  9. Install Cider music player"
     echo ""
     
     # Confirmation prompt
@@ -32,7 +34,7 @@ init_system() {
     
     local start_time=$(date +%s)
     local step=1
-    local total_steps=7
+    local total_steps=9
     
     # ---- Step 1: Uninstall unwanted packages ----
     sleep 2
@@ -88,7 +90,25 @@ init_system() {
     print_success "Step $step/$total_steps complete: ZSH environment processed"
     step=$((step + 1))
     
-    # ---- Step 7: Install Cider ----
+    # ---- Step 7: Install Android SDK Manager ----
+    sleep 2
+    print_title "Step $step/$total_steps: Installing Android SDK Manager"
+    
+    # Run in subshell to allow script to continue if it exits
+    ("${SCRIPT_DIR}/scripts/install_sdk_manager.sh") || print_warning "Android SDK Manager installation had issues (continuing anyway)"
+    print_success "Step $step/$total_steps complete: Android SDK Manager processed"
+    step=$((step + 1))
+    
+    # ---- Step 8: Install Flutter SDK ----
+    sleep 2
+    print_title "Step $step/$total_steps: Installing Flutter SDK"
+    
+    # Run in subshell to allow script to continue if it exits
+    ("${SCRIPT_DIR}/scripts/install_flutter_sdk.sh") || print_warning "Flutter SDK installation had issues (continuing anyway)"
+    print_success "Step $step/$total_steps complete: Flutter SDK processed"
+    step=$((step + 1))
+    
+    # ---- Step 9: Install Cider ----
     sleep 2
     print_title "Step $step/$total_steps: Installing Cider Music Player"
     
@@ -112,5 +132,7 @@ init_system() {
     echo "  3. Configure Powerlevel10k: p10k configure"
     echo "  4. Verify all services: systemctl status disable-usb-wakeup.service"
     echo "  5. Check mounted drives: df -h"
+    echo "  6. Check Flutter setup: flutter doctor -v"
+    echo "  7. Accept Android licenses: flutter doctor --android-licenses"
     echo ""
 }
