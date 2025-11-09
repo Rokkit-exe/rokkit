@@ -36,6 +36,28 @@ chmod +x rokkit
 
 ## Usage
 
+### Initialize a New System
+
+```bash
+./rokkit init
+```
+
+This command will perform a complete system setup in the following order:
+1. **Uninstall** unwanted packages from `config/uninstall-packages.conf`
+2. **Install** packages from `config/packages.conf`
+3. **Restore** dotfiles from backup
+4. **Mount** storage drive (configured in `config/drive.conf`)
+5. **Disable** USB wake to prevent keyboard from waking system
+6. **Setup** ZSH with Oh-My-ZSH, plugins, and Powerlevel10k theme
+7. **Install** Cider music player
+
+**Use this when:**
+- Setting up a fresh Arch Linux installation
+- Migrating to a new machine
+- Recovering your complete environment setup
+
+**Note:** You'll be asked to confirm before proceeding. Each step is tracked with progress indicators and timing information.
+
 ### Backup Your Dotfiles
 
 ```bash
@@ -71,8 +93,8 @@ This command will:
 
 This command will:
 - Read all package names from `config/packages.conf`
-- Install all packages using `yay -S --needed --noconfirm`
-- Skip packages that are already installed (thanks to `--needed` flag)
+- Install and update all packages using `yay -S --noconfirm`
+- Update packages that are already installed to latest versions
 - Show installation progress and summary
 
 **Note:** Requires `yay` to be installed on your system.
@@ -286,6 +308,7 @@ The `backgrounds/` directory contains curated wallpapers:
 rokkit/
 ├── rokkit                          # Main CLI executable
 ├── commands/                       # Command implementations
+│   ├── init.sh                     # Complete system initialization
 │   ├── backup.sh                   # Backup command
 │   ├── restore.sh                  # Restore command
 │   ├── install.sh                  # Install command

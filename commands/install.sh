@@ -43,17 +43,17 @@ install_packages() {
         exit 0
     fi
     
-    print_info "Found ${#packages[@]} packages to install"
+    print_info "Found ${#packages[@]} packages to install/update"
     echo ""
     
-    # Install packages with yay
-    print_info "Installing packages with yay..."
-    if yay -S --needed --noconfirm "${packages[@]}"; then
+    # Install/update packages with yay
+    print_info "Installing and updating packages with yay..."
+    if yay -S --noconfirm "${packages[@]}"; then
         echo ""
-        print_success "Package installation complete!"
+        print_success "Package installation/update complete!"
     else
         echo ""
-        print_error "Package installation failed"
+        print_error "Package installation/update failed"
         exit 1
     fi
 }
