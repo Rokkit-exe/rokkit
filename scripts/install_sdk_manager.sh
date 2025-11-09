@@ -1,155 +1,205 @@
 #!/usr/bin/env bash
+
 set -euo pipefail
 
-# ---- Usage -----------------------------------------------------------------
-show_usage() {
-  cat <<EOF
-Install SDK Manager - Setup Android SDK Command-line Tools
+# Colors for output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
-USAGE:
-  $0 <sdk_manager_zip_url>
-  $0 [OPTIONS]
-
-ARGUMENTS:
-  sdk_manager_zip_url    URL to Android SDK command-line tools ZIP
-
-OPTIONS:
-  -h, --help             Show this help message
-
-DESCRIPTION:
-  Downloads and installs Android SDK command-line tools to:
-    \$HOME/android/Sdk/cmdline-tools/latest
-  
-  Installs core packages:
-    - platform-tools
-    - emulator
-    - platforms;android-35
-    - build-tools;35.0.0
-  
-  Updates your shell RC file (.zshrc or .bashrc) with environment variables.
-  Points Flutter to the Android SDK if Flutter is installed.
-
-EXAMPLES:
-  $0 https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-
-FIND ZIP:
-  https://developer.android.com/studio#command-line-tools-only
-
-EOF
+# Output functions
+print_success() {
+    echo -e "${GREEN}✓${NC} $1"
 }
 
-# ---- Parse arguments -------------------------------------------------------
-if [ "$#" -eq 0 ]; then
-  show_usage
-  exit 1
-fi
+print_info() {
+    echo -e "${BLUE}➜${NC} $1"
+}
 
-for arg in "$@"; do
-  case "$arg" in
-    -h|--help)
-      show_usage
-      exit 0
-      ;;
-  esac
-done
+print_warning() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
 
-ZIP_URL="$1"
-
-# ---- Helpers ---------------------------------------------------------------
-msg(){ printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
-die(){ printf '\n\033[1;31m!! %s\033[0m\n' "$*" >&2; exit 1; }
-
-# Choose rc file
-SHELL_NAME="$(basename "${SHELL:-sh}")"
-if [ "$SHELL_NAME" = "zsh" ]; then
-  RCFILE="$HOME/.zshrc"
-else
-  RCFILE="$HOME/.bashrc"
-fi
+print_error() {
+    echo -e "${RED}✗${NC} $1"
+}
 
 # Constants
 ANDROID_SDK_ROOT="$HOME/android/Sdk"
 CMDLINE_LATEST="$ANDROID_SDK_ROOT/cmdline-tools/latest"
-MARK_START="# >>> ANDROID_SDK (managed by setup-android-sdk) >>>"
-MARK_END="# <<< ANDROID_SDK (managed by setup-android-sdk) <<<"
+MARK_START="# >>> ANDROID_SDK (managed by install_sdk_manager.sh) >>>"
+MARK_END="# <<< ANDROID_SDK (managed by install_sdk_manager.sh) <<<"
 
-# ---- Ensure prerequisites --------------------------------------------------
-msg "Installing prerequisites (requires sudo): unzip, wget, JDK 17"
-if ! command -v sudo >/dev/null 2>&1; then
-  die "sudo not found; install and re-run."
+# Determine shell RC file
+SHELL_NAME="$(basename "${SHELL:-bash}")"
+if [[ "$SHELL_NAME" == "zsh" ]]; then
+    RCFILE="$HOME/.zshrc"
+else
+    RCFILE="$HOME/.bashrc"
 fi
 
-sudo pacman -Syu --needed --noconfirm unzip wget jdk17-openjdk
+# ---- Header ----
+echo ""
+echo "═══════════════════════════════════════════════════"
+echo "  Android SDK Manager Installation"
+echo "═══════════════════════════════════════════════════"
+echo ""
 
-# Ensure Java 17 is active
-if command -v archlinux-java >/dev/null 2>&1; then
-  sudo archlinux-java set java-17-openjdk || true
+# ---- Check if already installed ----
+if [[ -d "$CMDLINE_LATEST" ]] && [[ -f "$CMDLINE_LATEST/bin/sdkmanager" ]]; then
+    print_success "Android SDK command-line tools already installed"
+    
+    # Export PATH for current session to check version
+    export PATH="$CMDLINE_LATEST/bin:$PATH"
+    
+    if command -v sdkmanager &>/dev/null; then
+        CURRENT_VERSION=$(sdkmanager --version 2>&1 | head -n1 || echo "unknown")
+        print_info "Current version: $CURRENT_VERSION"
+        print_info "Location: $CMDLINE_LATEST"
+        echo ""
+        
+        read -p "Do you want to update to the latest version? (y/N): " -n 1 -r
+        echo ""
+        
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            print_info "Installation skipped"
+            echo ""
+            exit 0
+        fi
+    fi
 fi
 
-# ---- Prepare directories ---------------------------------------------------
-msg "Preparing SDK directories at $ANDROID_SDK_ROOT"
+# ---- Fetch latest version URL ----
+print_info "Fetching latest Android SDK command-line tools URL..."
+
+# Android's official download page
+DOWNLOAD_PAGE="https://developer.android.com/studio"
+
+# Try to fetch the latest Linux command-line tools URL
+ZIP_URL=$(curl -sL "$DOWNLOAD_PAGE" | grep -oP 'https://dl\.google\.com/android/repository/commandlinetools-linux-[0-9]+_latest\.zip' | head -n1 || true)
+
+if [[ -z "$ZIP_URL" ]]; then
+    print_error "Could not automatically detect latest version URL"
+    print_info "Please visit: https://developer.android.com/studio#command-line-tools-only"
+    print_info "And run this script with the URL as an argument:"
+    print_info "  $0 <commandlinetools-url>"
+    echo ""
+    exit 1
+fi
+
+VERSION_NUM=$(echo "$ZIP_URL" | grep -oP 'commandlinetools-linux-\K[0-9]+' || echo "latest")
+print_success "Found latest version: $VERSION_NUM"
+print_info "Download URL: $ZIP_URL"
+echo ""
+
+# ---- Install prerequisites ----
+print_info "Checking prerequisites..."
+
+MISSING_DEPS=()
+command -v unzip &>/dev/null || MISSING_DEPS+=("unzip")
+command -v wget &>/dev/null || MISSING_DEPS+=("wget")
+command -v java &>/dev/null || MISSING_DEPS+=("jdk17-openjdk")
+
+if [[ ${#MISSING_DEPS[@]} -gt 0 ]]; then
+    print_info "Installing missing dependencies: ${MISSING_DEPS[*]}"
+    sudo pacman -S --needed --noconfirm "${MISSING_DEPS[@]}"
+    print_success "Dependencies installed"
+else
+    print_success "All prerequisites satisfied"
+fi
+
+# Ensure Java 17 is active (Arch Linux specific)
+if command -v archlinux-java &>/dev/null; then
+    CURRENT_JAVA=$(archlinux-java get 2>/dev/null || echo "none")
+    if [[ "$CURRENT_JAVA" != "java-17-openjdk" ]]; then
+        print_info "Setting Java 17 as default..."
+        sudo archlinux-java set java-17-openjdk || print_warning "Could not set Java 17"
+    else
+        print_success "Java 17 is already default"
+    fi
+fi
+
+# ---- Prepare directories ----
+print_info "Preparing SDK directory: $ANDROID_SDK_ROOT"
 mkdir -p "$ANDROID_SDK_ROOT"
+print_success "SDK directory ready"
 
-# ---- Download to a temp file ----------------------------------------------
+# ---- Download SDK tools ----
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
-BASENAME="$(basename "$ZIP_URL")"
+BASENAME="commandlinetools-linux-${VERSION_NUM}_latest.zip"
 ZIP_PATH="$TMPDIR/$BASENAME"
 
-msg "Downloading: $ZIP_URL"
-wget -qO "$ZIP_PATH" "$ZIP_URL" || die "Failed to download SDK ZIP."
+print_info "Downloading Android SDK command-line tools..."
+if wget -q --show-progress -O "$ZIP_PATH" "$ZIP_URL"; then
+    print_success "Download complete"
+else
+    print_error "Failed to download SDK tools"
+    exit 1
+fi
 
-# ---- Extract to 'cmdline-tools/latest' ------------------------------------
-msg "Extracting Command-line Tools"
-# The zip contains a top-level "cmdline-tools" directory. We move it to 'latest'.
+# ---- Extract and install ----
+print_info "Extracting command-line tools..."
 unzip -q "$ZIP_PATH" -d "$TMPDIR/extracted"
 
-# There are a few possible layouts; normalize them.
-if [ -d "$TMPDIR/extracted/cmdline-tools" ]; then
-  SRC_DIR="$TMPDIR/extracted/cmdline-tools"
+# Find the cmdline-tools directory
+if [[ -d "$TMPDIR/extracted/cmdline-tools" ]]; then
+    SRC_DIR="$TMPDIR/extracted/cmdline-tools"
 else
-  # Try to find it
-  SRC_DIR="$(find "$TMPDIR/extracted" -maxdepth 2 -type d -name cmdline-tools | head -n1 || true)"
-  [ -n "$SRC_DIR" ] || die "Could not locate 'cmdline-tools' inside ZIP."
+    SRC_DIR=$(find "$TMPDIR/extracted" -maxdepth 2 -type d -name cmdline-tools | head -n1)
+    if [[ -z "$SRC_DIR" ]]; then
+        print_error "Could not locate 'cmdline-tools' in downloaded archive"
+        exit 1
+    fi
 fi
 
-# Create final dest: $ANDROID_SDK_ROOT/cmdline-tools/latest
+# Backup existing installation if present
+if [[ -e "$CMDLINE_LATEST" ]]; then
+    BACKUP_DIR="${CMDLINE_LATEST}.backup.$(date +%s)"
+    print_info "Backing up existing installation to: $BACKUP_DIR"
+    mv "$CMDLINE_LATEST" "$BACKUP_DIR"
+fi
+
+# Install new version
 mkdir -p "$(dirname "$CMDLINE_LATEST")"
-# Replace atomically
-if [ -e "$CMDLINE_LATEST" ]; then
-  msg "Replacing existing cmdline-tools 'latest'"
-  rm -rf "$CMDLINE_LATEST"
-fi
 mv "$SRC_DIR" "$CMDLINE_LATEST"
+print_success "Command-line tools installed to: $CMDLINE_LATEST"
 
-# ---- Environment variables (current shell) --------------------------------
-msg "Exporting environment variables (current shell)"
+# ---- Setup environment variables ----
+print_info "Configuring environment variables..."
+
+# Export for current session
 export ANDROID_SDK_ROOT="$ANDROID_SDK_ROOT"
 export ANDROID_HOME="$ANDROID_SDK_ROOT"
 export ANDROID_AVD_HOME="$HOME/.android/avd"
 export PATH="$CMDLINE_LATEST/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/emulator:$PATH"
 
-# ---- Persist environment to RC file ---------------------------------------
-msg "Writing environment to $RCFILE"
-# Remove previous managed block if any
-if grep -qF "$MARK_START" "$RCFILE" 2>/dev/null; then
-  awk -v s="$MARK_START" -v e="$MARK_END" '
-    $0==s {skip=1}
-    !skip {print}
-    $0==e {skip=0}
-  ' "$RCFILE" > "$RCFILE.tmp" && mv "$RCFILE.tmp" "$RCFILE"
+# Update RC file
+if [[ -f "$RCFILE" ]]; then
+    # Remove old managed block if exists
+    if grep -qF "$MARK_START" "$RCFILE" 2>/dev/null; then
+        print_info "Removing old environment configuration from $RCFILE"
+        awk -v s="$MARK_START" -v e="$MARK_END" '
+            $0==s {skip=1}
+            !skip {print}
+            $0==e {skip=0; next}
+        ' "$RCFILE" > "$RCFILE.tmp" && mv "$RCFILE.tmp" "$RCFILE"
+    fi
 fi
 
+# Add new configuration
 cat >> "$RCFILE" <<EOF
 
 $MARK_START
-# Android SDK root (HOME-based)
+# Android SDK environment variables
 export ANDROID_SDK_ROOT="\$HOME/android/Sdk"
 export ANDROID_HOME="\$ANDROID_SDK_ROOT"
 export ANDROID_AVD_HOME="\$HOME/.android/avd"
 
-# cmdline-tools/latest first; add platform-tools & emulator
+# Add Android SDK tools to PATH
 if [[ ":\$PATH:" != *":\$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:"* ]]; then
   export PATH="\$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:\$PATH"
 fi
@@ -162,34 +212,91 @@ fi
 $MARK_END
 EOF
 
-# ---- Point Flutter to this SDK (if flutter exists) ------------------------
-if command -v flutter >/dev/null 2>&1; then
-  msg "Pointing Flutter to Android SDK"
-  flutter config --android-sdk "$ANDROID_SDK_ROOT" >/dev/null || true
+print_success "Environment configured in $RCFILE"
+
+# ---- Configure Flutter (if installed) ----
+if command -v flutter &>/dev/null; then
+    print_info "Configuring Flutter to use Android SDK..."
+    flutter config --android-sdk "$ANDROID_SDK_ROOT" &>/dev/null || true
+    print_success "Flutter configured"
 fi
 
-# ---- Verify sdkmanager is available ---------------------------------------
-msg "Verifying sdkmanager"
-if ! command -v sdkmanager >/dev/null 2>&1; then
-  which sdkmanager || true
-  readlink -f "$(command -v sdkmanager)" 2>/dev/null || true
-  die "sdkmanager not found in PATH. Check $CMDLINE_LATEST/bin is first in PATH."
+# ---- Verify installation ----
+print_info "Verifying sdkmanager..."
+if command -v sdkmanager &>/dev/null; then
+    INSTALLED_VERSION=$(sdkmanager --version 2>&1 | head -n1 || echo "unknown")
+    print_success "sdkmanager is available (version: $INSTALLED_VERSION)"
+else
+    print_error "sdkmanager not found in PATH"
+    exit 1
 fi
 
-# ---- Install core packages + accept licenses ------------------------------
-msg "Installing core Android packages and accepting licenses"
-yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses >/dev/null
-yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" \
-  "platform-tools" \
-  "emulator" \
-  "platforms;android-35" \
-  "build-tools;35.0.0" >/dev/null
+# ---- Install core Android packages ----
+print_info "Installing core Android SDK packages..."
+echo ""
+print_info "This will:"
+echo "  - Accept Android SDK licenses"
+echo "  - Install platform-tools (adb, fastboot)"
+echo "  - Install emulator"
+echo "  - Install Android 35 platform"
+echo "  - Install build-tools 35.0.0"
+echo ""
 
-# ---- Final checks ----------------------------------------------------------
-msg "Final checks"
-java  -version || die "Java not working"
-javac -version || die "Javac not working"
-sdkmanager --version || die "sdkmanager not working"
+read -p "Install core packages now? (Y/n): " -n 1 -r
+echo ""
 
-msg "Done! Open a NEW shell (to read $RCFILE), then run:  flutter doctor -v"
+if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+    print_info "Accepting licenses..."
+    yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses &>/dev/null || true
+    
+    print_info "Installing packages (this may take a few minutes)..."
+    if yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" \
+        "platform-tools" \
+        "emulator" \
+        "platforms;android-35" \
+        "build-tools;35.0.0" &>/dev/null; then
+        print_success "Core packages installed successfully"
+    else
+        print_warning "Some packages may have failed to install"
+    fi
+else
+    print_info "Skipping core package installation"
+    print_info "You can install them later with:"
+    echo "  sdkmanager \"platform-tools\" \"emulator\" \"platforms;android-35\" \"build-tools;35.0.0\""
+fi
 
+# ---- Final verification ----
+echo ""
+print_info "Verifying installation..."
+
+if command -v java &>/dev/null; then
+    JAVA_VERSION=$(java -version 2>&1 | head -n1)
+    print_success "Java: $JAVA_VERSION"
+else
+    print_warning "Java not found"
+fi
+
+if command -v sdkmanager &>/dev/null; then
+    print_success "sdkmanager: $(sdkmanager --version 2>&1 | head -n1)"
+else
+    print_warning "sdkmanager not accessible"
+fi
+
+# ---- Summary ----
+echo ""
+echo "═══════════════════════════════════════════════════"
+print_success "Android SDK Manager installation complete!"
+echo "═══════════════════════════════════════════════════"
+echo ""
+print_info "Installation location: $CMDLINE_LATEST"
+print_info "Environment configured in: $RCFILE"
+echo ""
+print_info "Next steps:"
+echo "  1. Open a new terminal or run: source $RCFILE"
+echo "  2. Verify with: sdkmanager --version"
+echo "  3. List packages: sdkmanager --list"
+echo "  4. Update packages: sdkmanager --update"
+if command -v flutter &>/dev/null; then
+    echo "  5. Check Flutter setup: flutter doctor -v"
+fi
+echo ""

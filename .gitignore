@@ -26,4 +26,4 @@ scripts/cmdline-tools/
 config/*.local.conf
 
 # agent files
-AGENT.md
+AGENTS.md

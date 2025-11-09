@@ -51,12 +51,23 @@ backup_dotfiles() {
         mkdir -p "$dest_dir"
         
         # Copy the file or directory
-        if cp -r "$source_path" "$dest_path"; then
-            print_success "Backed up: $line"
-            backed_up=$((backed_up + 1))
+        # Exclude shaders directory from .config/hypr backup (symlinks to system files)
+        if [[ "$line" == ".config/hypr" ]]; then
+            if rsync -a --exclude='shaders/' "$source_path/" "$dest_path/"; then
+                print_success "Backed up: $line (excluding shaders/)"
+                backed_up=$((backed_up + 1))
+            else
+                print_error "Failed to backup: $line"
+                failed=$((failed + 1))
+            fi
         else
-            print_error "Failed to backup: $line"
-            failed=$((failed + 1))
+            if cp -r "$source_path" "$dest_path"; then
+                print_success "Backed up: $line"
+                backed_up=$((backed_up + 1))
+            else
+                print_error "Failed to backup: $line"
+                failed=$((failed + 1))
+            fi
         fi
         
     done < "$CONFIG_FILE"
