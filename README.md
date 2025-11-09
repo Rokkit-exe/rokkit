@@ -23,7 +23,6 @@ A comprehensive bash CLI tool for backing up and managing your dotfiles, system 
 
 ### Included Resources
 - **Wallpapers**: Curated collection of aesthetic backgrounds for your desktop
-- **Hyprland Shaders**: 80+ screen shaders for Hyprland (cyberpunk, retro, accessibility, color filters, and more)
 
 ## Installation
 
@@ -281,19 +280,6 @@ The `backgrounds/` directory contains curated wallpapers:
 - Night city views
 - Aesthetic desk setups
 
-### Hyprland Shaders
-Over 80 screen shaders for Hyprland window manager in `dotfiles/.config/hypr/shaders/`:
-
-**Categories:**
-- **Accessibility**: Color-blind filters (deuteranopia, protanopia, tritanopia)
-- **Cyberpunk/Retro**: Cyberpunk, vaporwave, CRT effects, VHS, neon
-- **Color Themes**: Monochrome variations, duotone, tritone
-- **Vintage**: Film grain, sepia, vintage, noir, technicolor
-- **Filters**: Blue light reduction, night vision, thermal, infrared
-- **Effects**: Glitch, scanlines, depth of field, oil paint, cel shade
-- **Era Vibes**: 40s-00s decade-specific color grading
-- **Utility**: Brightness boost, contrast adjustment, color correction
-
 ## Project Structure
 
 ```
@@ -311,8 +297,7 @@ rokkit/
 │   └── drive.conf                  # Drive mount configuration
 ├── dotfiles/                       # Backup destination (created automatically)
 │   └── .config/                    # Configuration files backup
-│       ├── hypr/                   # Hyprland configuration
-│       │   ├── shaders/            # 80+ screen shaders
+│       ├── hypr/                   # Hyprland configuration (excludes shaders/)
 │       │   ├── hyprland.conf       # Main config
 │       │   ├── hyprlock.conf       # Lock screen config
 │       │   └── ...                 # Additional Hyprland configs
@@ -339,13 +324,13 @@ rokkit/
 ### Core Requirements
 - Bash 4.0+
 - Standard Unix utilities (cp, mkdir, dirname)
+- rsync (for backing up .config/hypr with exclusions)
 - Git (for cloning repositories and plugins)
 
 ### Optional Requirements
 - **yay** - AUR helper (required for install/uninstall package commands)
 - **curl** - For downloading fonts and installation scripts
 - **unzip** - For extracting font archives
-- **Hyprland** - To use the included shaders
 - **systemd** - For service file management
 
 ## License
