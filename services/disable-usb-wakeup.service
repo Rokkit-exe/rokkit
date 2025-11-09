@@ -1,0 +1,11 @@
+[Unit]
+Description=Disable USB Wakeup Devices (XHC0, XHC1, XHC2)
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/disable-usb-wake.sh
+
+[Install]
+WantedBy=multi-user.target
+
