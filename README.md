@@ -1,401 +1,51 @@
 # Rokkit
 
-A comprehensive bash CLI tool for backing up and managing your dotfiles, system packages, and Arch Linux environment setup.
+A comprehensive system configuration tool for Arch Linux with Hyprland.
+Rokkit provides an all-in-one solution for managing packages, and maintaining system utilities through simple bash scripts.
 
 ## Features
 
-### Core Dotfiles Management
-- Backup dotfiles and directories to a centralized location
-- Restore dotfiles from backup to your system
-- Install packages from a package list using yay
-- Uninstall unwanted packages from a package list using yay
-- Simple configuration via `dotfiles.conf`, `packages.conf`, and `uninstall-packages.conf`
-- Color-coded output with success/warning/error messages
-- Automatic directory structure preservation
-- Safety confirmation before restore and uninstall operations
-
-### Additional Utilities
-- **ZSH Setup**: Automated ZSH installation with Oh-My-ZSH, Powerlevel10k theme, and essential plugins
-- **Nerd Fonts**: Automated installation of popular Nerd Fonts (FiraCode, JetBrainsMono, Meslo, etc.)
-- **Development Tools**: Flutter SDK, Android SDK Manager, and Android tools installation scripts
-- **System Configuration**: USB device management and systemd service files
-- **Cider Installation**: Quick installation script for Cider music player
-
-### Included Resources
-- **Wallpapers**: Curated collection of aesthetic backgrounds for your desktop
-
-## Installation
-
-```bash
-# Clone or download the repository
-cd rokkit
-
-# Make the script executable
-chmod +x rokkit
-```
-
-## Usage
-
-### Initialize a New System
-
-```bash
-./rokkit init
-```
-
-This command will perform a complete system setup in the following order:
-1. **Uninstall** unwanted packages from `config/uninstall-packages.conf`
-2. **Install** packages from `config/packages.conf`
-3. **Restore** dotfiles from backup
-4. **Mount** storage drive (configured in `config/drive.conf`)
-5. **Disable** USB wake to prevent keyboard from waking system
-6. **Setup** ZSH with Oh-My-ZSH, plugins, and Powerlevel10k theme
-7. **Install** Android SDK Manager (latest stable version)
-8. **Install** Flutter SDK (latest stable version)
-9. **Install** Cider music player
-
-**Use this when:**
-- Setting up a fresh Arch Linux installation
-- Migrating to a new machine
-- Recovering your complete environment setup
-
-**Note:** You'll be asked to confirm before proceeding. Each step is tracked with progress indicators and timing information.
-
-### Backup Your Dotfiles
-
-```bash
-./rokkit backup
-```
-
-This command will:
-- Read all dotfile paths from `config/dotfiles.conf`
-- Copy each file/directory from your HOME to `dotfiles/`
-- Preserve directory structure
-- Show a summary of backed up, skipped, and failed items
-
-### Restore Your Dotfiles
-
-```bash
-./rokkit restore
-```
-
-This command will:
-- Read all dotfile paths from `config/dotfiles.conf`
-- Copy each file/directory from `dotfiles/` back to your HOME
-- Replace existing files/directories with backed up versions
-- Ask for confirmation before proceeding
-- Show a summary of restored, skipped, and failed items
-
-**Warning:** This will overwrite your current dotfiles! Make sure you have a recent backup.
-
-### Install Packages
-
-```bash
-./rokkit install
-```
-
-This command will:
-- Read all package names from `config/packages.conf`
-- Install and update all packages using `yay -S --noconfirm`
-- Update packages that are already installed to latest versions
-- Show installation progress and summary
-
-**Note:** Requires `yay` to be installed on your system.
-
-### Uninstall Packages
-
-```bash
-./rokkit uninstall
-```
-
-This command will:
-- Read all package names from `config/uninstall-packages.conf`
-- Display the list of packages to be removed
-- Ask for confirmation before proceeding
-- Uninstall all packages using `yay -R --noconfirm`
-- Show uninstallation progress and summary
-
-**Note:** Use this to remove unwanted packages from your system. Requires `yay` to be installed.
-
-### Show Help
-
-```bash
-./rokkit help
-```
-
-## Configuration
-
-### Dotfiles Configuration
-
-Edit `config/dotfiles.conf` to specify which dotfiles to track. Add one path per line, relative to your HOME directory.
-
-Example:
-```
-# Shell Configuration
-.zshrc
-.bashrc
-
-# Terminal Config
-.config/kitty
-
-# Editor
-.config/nvim
-
-# Git
-.gitconfig
-```
-
-### Package Configuration
-
-Edit `config/packages.conf` to specify which packages to install. Add one package name per line.
-
-Example:
-```
-# Browsers
-firefox
-brave-bin
-
-# Development Tools
-git
-docker
-neovim
-
-# Utilities
-htop
-fastfetch
-```
-
-### Uninstall Package Configuration
-
-Edit `config/uninstall-packages.conf` to specify which packages to uninstall. Add one package name per line.
-
-Example:
-```
-# Unwanted packages
-1password-cli
-spotify
-zoom
-```
-
-### Drive Mount Configuration
-
-Edit `config/drive.conf` to configure automatic drive mounting (used by `scripts/mount_drive.sh`).
-
-Example:
-```
-UUID=1aa44f69-7eed-4464-9b6f-8a847f9b8366
-MOUNT_POINT=/mnt/storage
-FILESYSTEM=ext4
-MOUNT_OPTIONS=defaults,nofail
-DEVICE_LABEL=Storage Drive
-```
-
-**Note:** Find your drive's UUID with: `lsblk -f` or `blkid`
-
-Lines starting with `#` are comments and will be ignored in all configuration files.
-
-## Utility Scripts
-
-Rokkit includes several idempotent utility scripts in the `scripts/` directory. All scripts feature:
-- Clean, color-coded console output with clear status messages
-- Safe to run multiple times (idempotent)
-- Automatic checks to skip already-completed steps
-- Proper error handling and validation
-
-### Setup & Installation Scripts
-
-#### setup_zsh.sh
-Automated ZSH setup with modern shell environment:
-- Installs ZSH (supports Arch Linux, Ubuntu, Debian)
-- Sets ZSH as default shell
-- Installs Oh-My-ZSH framework
-- Installs essential plugins (syntax highlighting, autosuggestions, completions)
-- Installs Powerlevel10k theme
-- Provides next-steps guidance for configuration
-
-```bash
-./scripts/setup_zsh.sh
-```
-
-#### install_cider.sh
-Install Cider music player from local package:
-- Checks if Cider is already installed
-- Verifies package file exists at `/mnt/storage/cider/`
-- Installs using pacman
-- Displays installed version
-
-```bash
-./scripts/install_cider.sh
-```
-
-#### install_nerd_fonts.sh
-Download and install popular Nerd Fonts (FiraCode, JetBrainsMono, Meslo, Noto, AdwaitaMono)
-
-```bash
-./scripts/install_nerd_fonts.sh
-```
-
-### System Management Scripts
-
-#### mount_drive.sh
-Mount a drive and add it to /etc/fstab for automatic boot mounting:
-- Reads configuration from `config/drive.conf`
-- Verifies drive exists before mounting
-- Creates mount point if needed
-- Checks if already mounted (prevents conflicts)
-- Backs up /etc/fstab before modifications
-- Validates fstab configuration
-- Shows drive status with df
-
-**Configuration**: Edit `config/drive.conf` with your drive details:
-```
-UUID=your-drive-uuid-here
-MOUNT_POINT=/mnt/storage
-FILESYSTEM=ext4
-MOUNT_OPTIONS=defaults,nofail
-DEVICE_LABEL=Storage Drive
-```
-
-**Usage**:
-```bash
-# Find your drive UUID first
-lsblk -f
-
-# Edit config/drive.conf with your UUID
-nano config/drive.conf
-
-# Run the script (idempotent - safe to run multiple times)
-./scripts/mount_drive.sh
-```
-
-#### disable_usb.sh
-Setup systemd service to prevent USB devices (keyboard) from waking system after suspend:
-- Installs wake disable script to `/usr/local/bin/`
-- Installs and enables systemd service
-- Disables wake for USB devices: XHC0, XHC1, XHC2
-- Shows before/after wake status
-- Runs automatically on boot
-
-```bash
-./scripts/disable_usb.sh
-```
-
-### Development Tools Scripts
-
-- **install_flutter_sdk.sh**: Install Flutter SDK for mobile development
-- **install_sdk_manager.sh**: Install Android SDK Manager
-- **install-android-tools.sh**: Install Android development tools
-
-### Making Scripts Executable
-
-```bash
-# Make all scripts executable
-chmod +x scripts/*.sh
-
-# Or make individual scripts executable
-chmod +x scripts/setup_zsh.sh
-```
-
-## Additional Resources
-
-### Wallpapers
-The `backgrounds/` directory contains curated wallpapers:
-- Cyberpunk city sunset
-- Low-poly street scene
-- Night city views
-- Aesthetic desk setups
+- **Package Management**: Install/uninstall packages using yay package manager
+- **System Initialization**: Complete system setup with a single command
+- **Hyprland Utilities**: Collection of helper scripts for Hyprland window manager
+- **Theme Management**: Consistent theming across applications
 
 ## Project Structure
 
 ```
 rokkit/
-├── rokkit                          # Main CLI executable
-├── lib/                            # Shared library functions
-│   └── common.sh                   # Common functions for all scripts
-├── commands/                       # Command implementations
-│   ├── init.sh                     # Complete system initialization
-│   ├── backup.sh                   # Backup command
-│   ├── restore.sh                  # Restore command
-│   ├── install.sh                  # Install command
-│   └── uninstall.sh                # Uninstall command
-├── config/
-│   ├── dotfiles.conf               # Dotfiles configuration
-│   ├── packages.conf               # Packages to install
-│   ├── uninstall-packages.conf     # Packages to uninstall
-│   └── drive.conf                  # Drive mount configuration
-├── dotfiles/                       # Backup destination (created automatically)
-│   └── .config/                    # Configuration files backup
-│       ├── hypr/                   # Hyprland configuration (excludes shaders/)
-│       │   ├── hyprland.conf       # Main config
-│       │   ├── hyprlock.conf       # Lock screen config
-│       │   └── ...                 # Additional Hyprland configs
-│       ├── kitty/                  # Kitty terminal config
-│       ├── nvim/                   # Neovim configuration
-│       └── waybar/                 # Waybar config with custom scripts
-├── backgrounds/                    # Wallpaper collection
-├── scripts/                        # Utility installation scripts
-│   ├── setup_zsh.sh               # ZSH setup with Oh-My-ZSH (idempotent)
-│   ├── install_nerd_fonts.sh      # Nerd Fonts installer
-│   ├── install_cider.sh           # Cider music player (idempotent)
-│   ├── install_flutter_sdk.sh     # Flutter SDK
-│   ├── install_sdk_manager.sh     # Android SDK Manager
-│   ├── install-android-tools.sh   # Android tools
-│   ├── disable_usb_wake.sh        # USB wake disable helper script
-│   ├── disable_usb.sh             # USB wake setup (idempotent)
-│   └── mount_drive.sh             # Drive mounting with config (idempotent)
-└── services/                       # Systemd service files
-    └── disable-usb-wakeup.service # USB wake disable service
+├── bin/                    # System utility scripts
+├── config/                 # Configuration files
+│   ├── dotfiles.conf       # Dotfiles to track (paths relative to $HOME)
+│   ├── packages.conf       # Packages to install
+│   ├── uninstall-packages.conf  # Packages to remove from omarchy
+│   └── drive.conf          # Drive mount configuration
+├── default/                # Default configuration templates
+├── lib/                    # Shared bash libraries
+│   ├── common.sh           # Common utility functions
+│   └── print.sh            # Formatted output functions (uses gum)
+├── themes/                 # Theme files for various applications
+└── services/               # Systemd service files
 ```
 
-## Shared Library
+## Core Component of the OS
 
-The `lib/common.sh` library provides reusable functions for all scripts:
-
-**Output Functions:**
-- `print_success` - Green checkmark messages
-- `print_info` - Blue arrow messages
-- `print_warning` - Yellow warning messages
-- `print_error` - Red error messages
-
-**Validation:**
-- `require_command` - Check if command exists
-- `require_sudo` - Check sudo privileges
-- `validate_config_file` - Validate config file exists and is readable
-
-**Network Operations:**
-- `download_with_retry` - Download with retry logic and timeout
-- `verify_checksum` - SHA256 checksum verification
-
-**Disk Management:**
-- `check_disk_space` - Verify sufficient disk space before operations
-
-**File Operations:**
-- `create_backup` - Create timestamped backups
-- `restore_backup` - Restore from backup
-
-**Process Management:**
-- `check_lock` - Prevent concurrent script execution
-- `release_lock` - Release lock file
-
-**Shell Configuration:**
-- `get_shell_rc` - Get appropriate RC file (.zshrc or .bashrc)
-- `update_rc_block` - Update managed block in RC file
-
-**Logging:**
-- `log_message` - Centralized logging to `~/.rokkit/rokkit.log`
-
-## Requirements
-
-### Core Requirements
-- Bash 4.0+
-- Standard Unix utilities (cp, mkdir, dirname)
-- rsync (for backing up .config/hypr with exclusions)
-- Git (for cloning repositories and plugins)
-
-### Optional Requirements
-- **yay** - AUR helper (required for install/uninstall package commands)
-- **curl** - For downloading fonts and installation scripts
-- **unzip** - For extracting font archives
-- **systemd** - For service file management
+- **Hyprland**: Dynamic tiling window manager
+- **Waybar**: Highly customizable status bar for Wayland
+- **Yay**: AUR helper for package management
+- **Kitty**: Fast, feature-rich terminal emulator
+- **Neovim**: Extensible text editor
+- **Nautilus**: File manager for GNOME
+- **Mako**: Notification daemon for Wayland
+- **Grim & Slurp**: Screenshot tools for Wayland
+- **Walker**: Menu application for Wayland
+- **Elephant**: App launcher for Wayland
+- **Wiremix**: Audio mixer for PipeWire
+- **Impala**: Wireless network manager for Wayland
+- **Blueberry**: Bluetooth manager for Wayland
+- **ZSH**: Powerful shell with extensive plugin support
+- **btrfs**: Advanced filesystem with snapshot capabilities
+- **Firefox**: Popular web browser
 
 ## License
 

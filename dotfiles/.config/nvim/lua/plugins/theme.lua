@@ -1,1 +1,0 @@
-/home/frank/.config/omarchy/current/theme/neovim.lua

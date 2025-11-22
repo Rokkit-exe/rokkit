@@ -1,0 +1,10 @@
+#!/bin/bash
+
+sudo pacman -S qemu-full libvirt virt-manager virt-viewer qemu-guest-agent
+
+sudo systemctl start libvirtd
+sudo systemctl enable libvirtd
+
+sudo usermod -a -G libvirt $USER
+
+virsh list

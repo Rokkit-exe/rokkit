@@ -1,0 +1,46 @@
+#!/bin/bash
+
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${BIN_DIR}/.." && pwd)"
+source "${ROOT_DIR}/lib/print.sh"
+
+CONFIG_DIR="${ROOT_DIR}/config"
+CONFIG_FILE="${CONFIG_DIR}/dotfiles.conf"
+DOTFILES_DIR="${ROOT_DIR}/dotfiles"
+
+mkdir -p "$DOTFILES_DIR"
+
+print_info "Starting dotfiles backup..."
+# Check if config file exists
+if [[ ! -f "$CONFIG_FILE" ]]; then
+    print_error "Configuration file not found: $CONFIG_FILE"
+    exit 1
+fi
+
+
+while IFS= read -r line; do
+    # Skip empty lines and comments
+    [[ -z "$line" || "$line" =~ ^# ]] && continue
+
+    if [[ -d "$HOME/$line" ]]; then
+        mkdir -p "$DOTFILES_DIR/$line"
+        rsync -a \
+            --exclude='*.bak*' \
+            --exclude='shaders' \
+            --exclude='temp' \
+            --exclude='cache' \
+            "$HOME/$line/" "$DOTFILES_DIR/$line/" || {
+            print_error "Failed to back up directory: $line"
+            continue
+        }
+    fi
+
+    if [[ -f "$HOME/$line" ]]; then
+        # exlude .bak files
+        mkdir -p "$(dirname "$DOTFILES_DIR/$line")"
+        rsync -a --exclude='*.bak*' "$HOME/$line" "$DOTFILES_DIR/$line" || {
+            print_error "Failed to back up file: $line"
+            continue
+        }
+    fi
+done < "$CONFIG_FILE"

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+rokkit-cmd-present yay || rokkit-install-yay
+
+yay -S zoxide starship bash-completion git
+
+git clone --recursive https://github.com/akinomyoga/ble.sh.git ~/ble.sh
+make -C ~/ble.sh install PREFIX=~/.local
+rm -rf ~/ble.sh
+
+

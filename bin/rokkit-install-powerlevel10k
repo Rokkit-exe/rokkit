@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -euo pipefail
+
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${BIN_DIR}/.." && pwd)"
+source "${ROOT_DIR}/lib/print.sh"
+
+ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+
+# Install Powerlevel10k theme
+if [[ -d "$ZSH_CUSTOM/themes/powerlevel10k" ]]; then
+    print_success "Powerlevel10k theme already installed"
+else
+    print_info "Installing Powerlevel10k theme..."
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
+        "$ZSH_CUSTOM/themes/powerlevel10k" && \
+        print_success "Powerlevel10k theme installed" || \
+        print_warning "Failed to install Powerlevel10k theme"
+fi

@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${BIN_DIR}/.." && pwd)"
+
+source "${ROOT_DIR}/lib/print.sh"
+# ---- Helpers ---------------------------------------------------------------
+need_cmd(){ command -v "$1" >/dev/null 2>&1 || print_error "Missing '$1' in PATH"; }
+
+
+ACTION=$(gum choose --header "Select action:" install remove)
+echo "Selected action: $ACTION"
+
+
+if [[ "$ACTION" == "remove" ]]; then
+  readarray -t EMULATORS < <(emulator -list-avds 2>/dev/null || echo "")
+  if [ "${#EMULATORS[@]}" -eq 0 ]; then
+    print_error "No AVDs found to remove."
+  fi
+  AVD_NAME=$(gum choose --header "Select AVD to remove:" "${EMULATORS[@]}")
+
+  print_info "Removing AVD '${AVD_NAME}' ..."
+  avdmanager delete avd -n "$AVD_NAME" || print_error "Failed to remove AVD '${AVD_NAME}'."
+  print_info "AVD '${AVD_NAME}' removed successfully."
+  exit 0
+fi
+
+echo "Select Android API level to install:"
+API_LEVEL=$(gum choose {30..36})
+echo "Selected API level: $API_LEVEL"
+
+echo "Select device profile for AVD:"
+DEVICE_PROFILE=$(gum choose pixel_6 pixel_7 pixel_8 pixel_9 resizable small_phone)
+echo "Selected device profile: $DEVICE_PROFILE"
+
+# === Config (bump API if you know it's available) ===
+IMAGE_KEY="system-images;android-${API_LEVEL};google_apis;x86_64"
+DEVICE_PROFILE="${DEVICE_PROFILE:-resizable}"   # run: avdmanager list device
+AVD_NAME="${AVD_NAME:-${DEVICE_PROFILE}_API_${API_LEVEL}}"
+INI="$HOME/.android/avd/${AVD_NAME}.avd/config.ini"
+
+# SDK root: respect existing, else default to HOME
+export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/android/Sdk}"
+export ANDROID_HOME="$ANDROID_SDK_ROOT"
+
+# Put sdkmanager/avdmanager/emulator in PATH
+export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/emulator:$PATH"
+
+
+
+
+# Re-check now that PATH includes cmdline-tools
+need_cmd sdkmanager
+need_cmd avdmanager
+
+# Accept licenses up front
+print_info "Accepting Android SDK licenses..."
+yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses >/dev/null || true
+
+
+print_info "Installing platform-tools, platform ${API_LEVEL}, and system image into HOME SDK ..."
+sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --install "platform-tools" "platforms;android-${API_LEVEL}" "$IMAGE_KEY"
+
+# Create AVD (clean if it exists)
+print_info "Creating AVD '${AVD_NAME}' with device '${DEVICE_PROFILE}' ..."
+avdmanager delete avd -n "$AVD_NAME" || true
+
+# Non-interactive; let -k decide tag/ABI (no need to pass --abi/--tag)
+echo "no" | avdmanager create avd \
+  -n "$AVD_NAME" \
+  -k "$IMAGE_KEY" \
+  --device "$DEVICE_PROFILE" \
+  --sdcard "2048M" \
+  --force
+
+# Verify
+need_cmd emulator
+print_info "Available AVDs:"
+emulator -list-avds || true 
+
+
+GPU_CHOICE=$(gum choose --header "Enable GPU rendering with SwiftShader?" yes no)
+
+if [[ "$GPU_CHOICE" == "yes" ]]; then
+  print_info "Patching AVD config to use SwiftShader GPU rendering ..."
+  cp -f "$INI" "${INI}.bak"
+
+  # ensure GPU is on and forced to swiftshader
+  grep -q '^hw.gpu.enabled=' "$INI" && \
+    sed -i 's/^hw.gpu.enabled=.*/hw.gpu.enabled=yes/' "$INI" || \
+    printf '\nhw.gpu.enabled=yes\n' >> "$INI"
+
+  # set mode to swiftshader_indirect
+  if grep -q '^hw.gpu.mode=' "$INI"; then
+    sed -i 's/^hw.gpu.mode=.*/hw.gpu.mode=swiftshader_indirect/' "$INI"
+  else
+    printf 'hw.gpu.mode=swiftshader_indirect\n' >> "$INI"
+  fi
+  print_info "AVD config patched successfully."
+else
+  print_info "Skipping GPU rendering configuration."
+fi
+
+print_info "Enabling keyboard support"
+grep -q '^hw.keyboard=' "$INI" && \
+  sed -i 's/^hw.keyboard=.*/hw.keyboard=yes/' "$INI" || \
+  printf '\nhw.keyboard=yes\n' >> "$INI" 
+
+cat <<EOF
+
+----------------------------------------------------------------------
+✅ Setup complete.
+
+AVD:
+  Name: ${AVD_NAME}
+  Image: ${IMAGE_KEY}
+  Device profile: ${DEVICE_PROFILE}
+
+Useful:
+  flutter doctor -v
+  avdmanager list device
+  sdkmanager --sdk_root="\$ANDROID_SDK_ROOT" --list
+
+----------------------------------------------------------------------
+EOF

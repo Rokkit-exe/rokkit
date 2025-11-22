@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Create if not exist volume
+[ -f /mnt/storage/rokkit.qcow2 ] || {
+  qemu-img create -f qcow2 /mnt/storage/rokkit.qcow2 80G
+}
+
+# Create and launch VM
+virt-install \
+  --name rokkit \
+  --memory 8192 \
+  --vcpus 8 \
+  --disk path=/mnt/storage/rokkit.qcow2,format=qcow2 \
+  --network default \
+  --os-variant archlinux \
+  --cdrom /mnt/storage/ISO/archlinux-2025.11.01-x86_64.iso \
+  --check all=off

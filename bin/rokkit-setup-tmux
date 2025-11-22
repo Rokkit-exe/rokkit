@@ -1,0 +1,13 @@
+#!/bin/bash
+
+
+# make sure tmux is installed
+rokkit-cmd-present tmux || sudo pacman -S tmux --needed --noconfirm
+rokkit-cmd-present git || sudo pacman -S git --needed --noconfirm
+
+[ -d "$HOME/.config/tmux" ] || cp -r "../dotfiles/tmux/" "$HOME/.config"
+
+# install TPM
+git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
+
+

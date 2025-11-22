@@ -3,39 +3,6 @@
 # Rokkit Common Library
 # Shared functions for all Rokkit scripts
 
-# Colors for output
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
-
-# ---- Output Functions ----
-
-print_title() {
-    echo ""
-    echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════${NC}"
-    echo -e "${BLUE}  $1     ${NC}"
-    echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════${NC}"
-    echo ""
-}
-
-print_success() {
-    echo -e "${GREEN}✓${NC} $1"
-}
-
-print_info() {
-    echo -e "${BLUE}➜${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}✗${NC} $1"
-}
-
 # ---- Validation Functions ----
 
 # Check if a command exists
@@ -48,32 +15,6 @@ require_command() {
         print_info "Install it with: sudo pacman -S $package"
         return 1
     fi
-    return 0
-}
-
-# Check if running with sufficient privileges
-require_sudo() {
-    if [[ $EUID -ne 0 ]] && ! sudo -n true 2>/dev/null; then
-        print_warning "This operation requires sudo privileges"
-        return 1
-    fi
-    return 0
-}
-
-# Validate config file exists and is readable
-validate_config_file() {
-    local config_file="$1"
-    
-    if [[ ! -f "$config_file" ]]; then
-        print_error "Configuration file not found: $config_file"
-        return 1
-    fi
-    
-    if [[ ! -r "$config_file" ]]; then
-        print_error "Configuration file not readable: $config_file"
-        return 1
-    fi
-    
     return 0
 }
 
@@ -270,18 +211,6 @@ update_rc_block() {
         echo "$content"
         echo "$marker_end"
     } >> "$rc_file"
-}
-
-# ---- Logging ----
-
-# Log message with timestamp
-log_message() {
-    local log_file="${ROKKIT_LOG_FILE:-$HOME/.rokkit/rokkit.log}"
-    local log_dir
-    log_dir="$(dirname "$log_file")"
-    
-    mkdir -p "$log_dir"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$log_file"
 }
 
 # ---- Cleanup ----

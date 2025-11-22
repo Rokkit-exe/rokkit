@@ -1,0 +1,9 @@
+#!/bin/bash
+URL="$1"
+
+# Check if Firefox is running
+if pgrep -x firefox > /dev/null; then
+    firefox -new-tab "$URL" &
+else
+    firefox "$URL" &
+fi

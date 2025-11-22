@@ -27,3 +27,6 @@ config/*.local.conf
 
 # agent files
 AGENTS.md
+
+#tmux plugins
+dotfiles/.config/tmux/plugins/*
