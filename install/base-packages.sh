@@ -9,7 +9,11 @@ pacstrap /mnt base \
   vim \
   git \
   limine \
-  limine-mkinitcpio-hook \
-  limine-snapper-sync \
-  snapper
-
+  snapper \
+  jq \
+  curl \
+  gum \
+  sudo \
+  efibootmgr \
+  os-prober \
+  networkmanager \

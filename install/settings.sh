@@ -14,8 +14,9 @@ choose_layout() {
 }
 
 choose_mirrorlist() {
-    local mirrorlists=("Canada" "United States")
-    MIRRORLIST=$(choose "Choose a mirrorlist:" "${mirrorlists[@]}")
+    local countries=("Canada" "United States")
+    COUNTRY=$(choose "Where are you ?:" "${countries[@]}")
+    sudo reflector --country "$COUNTRY" --latest 20 --fastest 10 --sort rate --save /etc/pacman.d/mirrorlist
 }
 
 choose_drive() {

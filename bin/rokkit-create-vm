@@ -4,6 +4,8 @@
 [ -f /mnt/storage/rokkit.qcow2 ] || {
   qemu-img create -f qcow2 /mnt/storage/rokkit.qcow2 80G
 }
+# Find the latest Rokkitos ISO
+LATEST_ISO=$(find /mnt/storage/ISO/rokkitos/ -type f -name "rokkitos-*-x86_64.iso" | sort | tail -n 1)
 
 # Create and launch VM
 virt-install \
@@ -12,6 +14,11 @@ virt-install \
   --vcpus 8 \
   --disk path=/mnt/storage/rokkit.qcow2,format=qcow2 \
   --network default \
+  --graphics spice \
   --os-variant archlinux \
-  --cdrom /mnt/storage/ISO/archlinux-2025.11.01-x86_64.iso \
-  --check all=off
+  --cdrom "$LATEST_ISO" \
+  --boot uefi \
+  --check all=off &
+
+remote-viewer spice://localhost:5900
+

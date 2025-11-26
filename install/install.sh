@@ -15,6 +15,8 @@
 
 # pacstrap (base system) ✓
 ./base-packages.sh
+./install-yay.sh
+./aur-packages.sh
 
 # Generate fstab ✓
 genfstab -U /mnt >> /mnt/etc/fstab
