@@ -9,13 +9,13 @@ source "${ROOT_DIR}/lib/print.sh"
 print_title "Installing yay AUR helper"
 
 ./rokkit-cmd-present yay && {
-    print_success "yay is already installed."
-    exit 0
+  print_success "yay is already installed."
+  exit 0
 }
 
-if ! pacman -Qe git &> /dev/null && ! pacman -Qe base-devel &> /dev/null; then
-    print_info "Installing git and base-devel packages..."
-    sudo pacman -S --needed --noconfirm git base-devel
+if ! pacman -Qe git &>/dev/null && ! pacman -Qe base-devel &>/dev/null; then
+  print_info "Installing git and base-devel packages..."
+  sudo pacman -S --needed --noconfirm git base-devel
 fi
 
 # Clone the yay repository and install it
@@ -24,23 +24,22 @@ gum spin --title "Cloning yay repository" -- git clone https://aur.archlinux.org
 print_info "Cloned yay repository."
 
 if [ -d yay ]; then
-    cd yay || {
-        print_error "Failed to enter yay directory."
-        exit 1
-    }
-    print_info "Building and installing yay..."
-    sudo -v
-    gum spin --title "Building and installing yay" -- sudo makepkg -si --noconfirm
-    print_success "yay installed successfully."
-    cd .. || {
-        print_warning "Failed to return to /tmp directory."
-        exit 1
-    }
-    print_info "Cleaning up..."
-    rm -rf yay || {
-        print_warning "Failed to remove temporary yay directory."
-    }
-else
-    print_error "Failed to clone yay repository."
+  cd yay || {
+    print_error "Failed to enter yay directory."
     exit 1
+  }
+  print_info "Building and installing yay..."
+  sudo makepkg -si --noconfirm
+  print_success "yay installed successfully."
+  cd .. || {
+    print_warning "Failed to return to /tmp directory."
+    exit 1
+  }
+  print_info "Cleaning up..."
+  rm -rf yay || {
+    print_warning "Failed to remove temporary yay directory."
+  }
+else
+  print_error "Failed to clone yay repository."
+  exit 1
 fi

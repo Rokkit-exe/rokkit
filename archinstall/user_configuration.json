@@ -1,0 +1,124 @@
+{
+    "app_config": {
+        "audio_config": {
+            "audio": "pipewire"
+        },
+        "bluetooth_config": {
+            "enabled": true
+        }
+    },
+    "archinstall-language": "English",
+    "auth_config": {},
+    "bootloader_config": {
+        "bootloader": "Grub",
+        "removable": false,
+        "uki": false
+    },
+    "custom_commands": [],
+    "hostname": "arch",
+    "kernels": [
+        "linux",
+        "linux-lts"
+    ],
+    "locale_config": {
+        "kb_layout": "ca",
+        "sys_enc": "UTF-8",
+        "sys_lang": "en_CA.UTF-8"
+    },
+    "mirror_config": {
+        "custom_repositories": [],
+        "custom_servers": [],
+        "mirror_regions": {
+            "Canada": [
+                "http://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch",
+                "https://mirror.csclub.uwaterloo.ca/archlinux/$repo/os/$arch",
+                "http://mirror.its.dal.ca/archlinux/$repo/os/$arch",
+                "http://archlinux.mirror.rafal.ca/$repo/os/$arch",
+                "http://muug.ca/mirror/archlinux/$repo/os/$arch",
+                "https://muug.ca/mirror/archlinux/$repo/os/$arch",
+                "http://ca.mirrors.cicku.me/archlinux/$repo/os/$arch",
+                "https://ca.mirrors.cicku.me/archlinux/$repo/os/$arch",
+                "http://mirror.scd31.com/arch/$repo/os/$arch",
+                "https://mirror.scd31.com/arch/$repo/os/$arch",
+                "http://mirror2.evolution-host.com/archlinux/$repo/os/$arch",
+                "https://mirror2.evolution-host.com/archlinux/$repo/os/$arch",
+                "http://mirror.xenyth.net/archlinux/$repo/os/$arch",
+                "https://mirror.xenyth.net/archlinux/$repo/os/$arch",
+                "https://arch.mirror.winslow.cloud/$repo/os/$arch",
+                "http://mirror.quantum5.ca/archlinux/$repo/os/$arch",
+                "https://mirror.quantum5.ca/archlinux/$repo/os/$arch",
+                "https://mirror.franscorack.com/archlinux/$repo/os/$arch",
+                "http://mirror.cpsc.ucalgary.ca/mirror/archlinux.org/$repo/os/$arch",
+                "https://mirror.cpsc.ucalgary.ca/mirror/archlinux.org/$repo/os/$arch",
+                "http://mirrors.pablonara.com/archlinux/$repo/os/$arch",
+                "https://mirrors.pablonara.com/archlinux/$repo/os/$arch",
+                "https://upstream-1.pablonara.com/archlinux/$repo/os/$arch",
+                "https://stygian.failzero.net/mirror/archlinux/$repo/os/$arch"
+            ]
+        },
+        "optional_repositories": []
+    },
+    "network_config": {
+        "type": "nm"
+    },
+    "ntp": true,
+    "packages": [
+        "7zip",
+        "base-devel",
+        "bat",
+        "chezmoi",
+        "curl",
+        "discord",
+        "docker",
+        "fastfetch",
+        "fd",
+        "firefox",
+        "fzf",
+        "git",
+        "go",
+        "grub-btrfs",
+        "gum",
+        "htop",
+        "jdk17-openjdk",
+        "jq",
+        "kitty",
+        "less",
+        "man-db",
+        "neovim",
+        "net-tools",
+        "nodejs",
+        "obsidian",
+        "ripgrep",
+        "starship",
+        "thunderbird",
+        "tldr",
+        "tmux",
+        "ttf-firacode-nerd",
+        "ttf-jetbrains-mono-nerd",
+        "ufw",
+        "unzip",
+        "wget",
+        "zoxide",
+        "zsh",
+        "rsync"
+    ],
+    "parallel_downloads": 0,
+    "profile_config": {
+        "gfx_driver": "All open-source",
+        "greeter": "gdm",
+        "profile": {
+            "custom_settings": {
+                "GNOME": {}
+            },
+            "details": [
+                "GNOME"
+            ],
+            "main": "Desktop"
+        }
+    },
+    "script": null,
+    "services": [],
+    "swap": true,
+    "timezone": "America/Toronto",
+    "version": "3.0.14"
+}
