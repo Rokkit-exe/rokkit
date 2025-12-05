@@ -87,7 +87,7 @@ read -r -p "query: " query
 
 # search cht.sh based on selection (language or core utility) and display with bat
 if printf "%s" "${languages[@]}" | grep -qs "$selected"; then
-  curl cht.sh/"$selected"/"$(echo "$query" | tr ' ' '+')" | bat --paging always --language "$selected" 
+  curl cht.sh/"$selected"/"$(echo "$query" | tr ' ' '+')" | bat --paging always
 else
   curl cht.sh/"$selected"~"$(echo "$query" | tr ' ' '+')" | bat --paging always
 fi 
