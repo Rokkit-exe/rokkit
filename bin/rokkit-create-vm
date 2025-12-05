@@ -7,8 +7,24 @@
 # Find the latest Rokkitos ISO
 LATEST_ISO=$(find /mnt/storage/ISO/rokkitos/ -type f -name "rokkitos-*-x86_64.iso" | sort | tail -n 1)
 
+# Create directory for QEMU certificates
+if [ ! -d /etc/pki/qemu ]; then
+  sudo mkdir -p /etc/pki/qemu
+fi
+
+cd /etc/pki/qemu || exit 1
+
+if [ ! -f ca-key.pem ] && [ ! -f ca-cert.pem ]; then
+  # Generate a self-signed certificate
+  sudo openssl req -x509 -newkey rsa:2048 -keyout ca-key.pem -out ca-cert.pem -days 365 -nodes \
+    -subj "/C=US/ST=State/L=City/O=Org/CN=localhost"
+
+  sudo chmod 644 ca-key.pem ca-cert.pem
+fi
+
 # Create and launch VM
 virt-install \
+  --connect qemu:///system \
   --name rokkit \
   --memory 8192 \
   --vcpus 8 \
@@ -18,7 +34,9 @@ virt-install \
   --os-variant archlinux \
   --cdrom "$LATEST_ISO" \
   --boot uefi \
-  --check all=off &
+  --check all=off && sudo virsh --connect qemu:///system shutdown rokkit 2>/dev/null || true
+sleep 5
+echo "VM 'rokkit' created and shut down. You can now start it with:"
 
-remote-viewer spice://localhost:5900
+#virsh --connect qemu:///system start rokkit
 

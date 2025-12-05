@@ -2,16 +2,34 @@
 
 # Disk Partitioning Script for Arch Linux
 # Creates EFI partition and btrfs root partition
-source ../lib/print.sh
+PRE_FLIGHT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${PRE_FLIGHT_DIR}/../../" && pwd)"
+source "$ROOT_DIR/lib/print.sh"  
 
 set -e
 
+if [ ! -f "$ROOT_DIR/config/settings.conf" ]; then
+    print_error "Error: ../config/settings.conf not found."
+    exit 1
+fi
+source "$ROOT_DIR/config/settings.conf"
+
+if [ -z "$DISK" ]; then
+    print_error "Error: DISK is not set in ../config/settings.conf."
+    exit 1
+fi
+
 print_info "Arch Linux Disk Partitioner"
+
+if [ "$EUID" -ne 0 ]; then 
+    print_error "Please run as root"
+    exit 1
+fi
 
 # Verify disk exists
 if [ ! -b "$DISK" ]; then
-    print_error "Error: $DISK not found"
-    exit 1
+    print_error "disk $DISK does not exist."
+    DISK=$(gum input --placeholder "Enter target disk (e.g., /dev/sda): ")
 fi
 
 # Show warning
@@ -68,7 +86,7 @@ btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@pkg
 btrfs subvolume create /mnt/@log
-btrfs subvolume create /mnt/@.snapshots
+#btrfs subvolume create /mnt/.snapshots
 
 print_success "Subvolumes created:"
 btrfs subvolume list /mnt
@@ -85,7 +103,7 @@ mkdir -p /mnt/{boot,home,var/cache/pacman/pkg,var/log,.snapshots}
 mount -o subvol=@home,compress=zstd "$root_part" /mnt/home
 mount -o subvol=@pkg,compress=zstd "$root_part" /mnt/var/cache/pacman/pkg
 mount -o subvol=@log,compress=zstd "$root_part" /mnt/var/log
-mount -o subvol=@.snapshots,compress=zstd "$root_part" /mnt/.snapshots
+#mount -o subvol=@.snapshots,compress=zstd "$root_part" /mnt/.snapshots
 
 mount "$efi_part" /mnt/boot
 

@@ -24,6 +24,7 @@ scripts/cmdline-tools/
 
 # Local configuration overrides
 config/*.local.conf
+config/settings.conf
 
 # agent files
 AGENTS.md

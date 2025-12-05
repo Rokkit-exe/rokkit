@@ -1,6 +1,8 @@
 #!/bin/bash
 
-source ../lib/print.sh
+PRE_FLIGHT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${PRE_FLIGHT_DIR}/../../" && pwd)"
+source "${ROOT_DIR}/lib/print.sh"
 
 choose_locale() {
     local locales=("en_CA.UTF-8" "fr_CA.UTF-8")
@@ -14,8 +16,10 @@ choose_layout() {
 }
 
 choose_mirrorlist() {
-    local countries=("Canada" "United States")
-    COUNTRY=$(choose "Where are you ?:" "${countries[@]}")
+    #local countries=("Canada" "United States")
+    #COUNTRY=$(choose "Where are you ?:" "${countries[@]}")
+    #print_info "Updating mirrorlist for $COUNTRY"
+    COUNTRY="Canada"
     sudo reflector --country "$COUNTRY" --latest 20 --fastest 10 --sort rate --save /etc/pacman.d/mirrorlist
 }
 
@@ -34,20 +38,20 @@ choose_drive() {
 }
 
 choose_hostname() {
-    HOST_NAME=$(gum input --header.foreground 4 --header "Enter the hostname for your system:" --placeholder "rokkitos")
+    HOST_NAME=$(input "Enter the hostname for your system:" "rokkitos")
     print_info "Setting hostname to $HOST_NAME"
 }
 
 choose_username() {
     print_info "Enter a username for the new user:"
-    USER_NAME=$(gum input --placeholder "rokkit")
+    USER_NAME=$(input "Enter a username for the new user:" "rokkit")
     print_info "Setting username to $USER_NAME"
 }
 
 choose_password() {
    while true; do
-       PASSWORD=$(gum input --header.foreground 4 --header "Set a password for user $USER_NAME:" --placeholder "password" --password)
-       PASSWORD_CONFIRM=$(gum input --header.foreground 4 --header "Confirm the password for user $USER_NAME:" --placeholder "password" --password)
+       PASSWORD=$(input "Set a password for user $USER_NAME:" "password" --password)
+       PASSWORD_CONFIRM=$(input "Confirm the password for user $USER_NAME:" "password" --password)
        if [ "$PASSWORD" == "$PASSWORD_CONFIRM" ]; then
            print_info "Password set for user $USER_NAME"
            break
@@ -64,25 +68,22 @@ choose_same_password() {
 
 choose_root_password() {
   while true; do
-      ROOT_PASS=$(gum input --header.foreground 4 --header "Set a password for root user:" --placeholder "root password" --password)
-      ROOT_PASS_CONFIRM=$(gum input --header.foreground 4 --header "Confirm the root password:" --placeholder "root password" --password)
+      ROOT_PASS=$(input "Set a password for root user:" "root password" --password)
+      ROOT_PASS_CONFIRM=$(input "Confirm the root password:" "root password" --password)
       if [ "$ROOT_PASS" == "$ROOT_PASS_CONFIRM" ]; then
           print_info "Root password set"
           break
       else
-          gum style --foreground red --bold "Error: Root passwords do not match. Please try again."
+          print_error "Root passwords do not match. Please try again."
           sleep 2
       fi
   done
 }
 
 choose_git_info() {
-  GIT_NAME=$(gum input --header.foreground 4 --header "Enter full name for Git user:" --placeholder "rokkit user")
+  GIT_NAME=$(input "Enter full name for Git user:" "rokkit user")
   print_info "Setting Git user.name to $GIT_NAME"
-  GIT_EMAIL=$(gum input --header.foreground 4 --header "Enter email for Git user:" --placeholder "rokkit@me.com")
-}
-print_info() {
-    gum style --foreground 4 --bold "➜ $1"
+  GIT_EMAIL=$(input "Enter email for Git user:" "rokkit@me.com")
 }
 
 confirm_settings() {
@@ -96,13 +97,30 @@ confirm_settings() {
 | Locale | $LOCALE |
 | Keyboard Layout | $KEYBOARD_LAYOUT |
 | Git Name | $GIT_NAME |
-| Git Email | $GIT_EMAIL |
+| Git Email | \`$GIT_EMAIL\` |
 | Target Disk | $DISK |
 
 EOF
 echo
 CONFIRM=$(choose "Are these settings correct?" "Yes" "No")
 }
+
+save_settings() {
+    cat > "$ROOT_DIR/config/settings.conf" << EOF
+#!/bin/bash
+HOST_NAME="$HOST_NAME"
+USER_NAME="$USER_NAME"
+PASSWORD="$PASSWORD"
+ROOT_PASS="$ROOT_PASS"
+LOCALE="$LOCALE"
+KEYBOARD_LAYOUT="$KEYBOARD_LAYOUT"
+GIT_NAME="$GIT_NAME"
+GIT_EMAIL="$GIT_EMAIL"
+DISK="$DISK"
+EOF
+    print_success "Settings saved to $ROOT_DIR/config/settings.conf"
+}
+chmod +x "$ROOT_DIR/config/settings.conf"
 
 
 clear 
@@ -162,8 +180,11 @@ print_logo
 confirm_settings
 
 if [ "$CONFIRM" == "No" ]; then
-    exec ./install.sh
+    exec ./settings.sh
 fi
+
+print_info "Saving settings..."
+save_settings
 
 print_info "All settings confirmed. Proceeding with installation..."
 

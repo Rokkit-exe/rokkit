@@ -1,7 +1,9 @@
 #!/bin/bash
 
 
-source ../lib/print.sh
+PRE_FLIGHT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${PRE_FLIGHT_DIR}/../../" && pwd)"
+source "${ROOT_DIR}/lib/print.sh"    
 
 print_info "Checking Network"
 

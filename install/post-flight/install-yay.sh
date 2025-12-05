@@ -1,8 +1,12 @@
 #!/bin/bash
 
 
+PRE_FLIGHT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${PRE_FLIGHT_DIR}/../../" && pwd)"
+source "${ROOT_DIR}/lib/print.sh"
+set -e
+
 # install yay from chroot
-#
 pacman -S base-devel git --noconfirm --needed
 
 useradd -m -s /bin/bash builduser
@@ -22,7 +26,7 @@ sed -i '/builduser ALL=(ALL) NOPASSWD: ALL/d' /etc/sudoers
 
 # verify installation
 if ! command -v yay &> /dev/null; then
-    echo "Yay installation failed."
+    print_error "Yay installation failed."
     exit 1
 fi
-echo "Yay installed successfully."
+print_success "Yay installed successfully."

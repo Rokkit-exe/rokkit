@@ -3,14 +3,14 @@
 # making sure all required commands are available
 
 # check if vanilla arch linux iso
-if [ ! -f /etc/arch-release ]; then
-    echo "This script is intended to be run on a vanilla Arch Linux installation ISO."
-    exit 1
-fi
-if cat /etc/os-release | grep -q "Arch Linux"; then
-    echo "This script is intended to be run on a vanilla Arch Linux installation ISO."
-    exit 1
-fi
+# if [ ! -f /etc/arch-release ]; then
+#     echo "This script is intended to be run on a vanilla Arch Linux installation ISO."
+#     exit 1
+# fi
+# if cat /etc/os-release | grep -q "Arch Linux"; then
+#     echo "This script is intended to be run on a vanilla Arch Linux installation ISO."
+#     exit 1
+# fi
 
 # check efi mode
 if [ ! -d /sys/firmware/efi/efivars ]; then
