@@ -8,6 +8,10 @@ print_title "Checking Internet Connectivity"
 # check internet connectivity
 ./connection.sh
 
+# update system clock
+print_title "Updating System Clock"
+timedatectl set-ntp true
+
 print_title "Checking Requirements"
 # Check for required commands and environment
 ./requirements.sh

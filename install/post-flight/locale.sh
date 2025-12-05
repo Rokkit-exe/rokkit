@@ -17,6 +17,18 @@ if [ -z "$LOCALE" ]; then
     exit 1
 fi
 
-echo "$LOCALE UTF-8" >> /etc/locale.gen
+if [ ! -f /etc/locale.gen ]; then
+    echo "Error: /etc/locale.gen not found."
+    exit 1
+fi
+
+# uncomment the desired locale in /etc/locale.gen and generate it
+sed -i "s/^#${LOCALE} UTF-8/${LOCALE} UTF-8/" /etc/locale.gen
+
+# comment en_US.UTF-8 if LOCALE is different
+if [ "$LOCALE" != "en_US.UTF-8" ]; then
+    sed -i "s/^${LOCALE} UTF-8/#${LOCALE} UTF-8/" /etc/locale.gen
+fi
+
 locale-gen
 echo "LANG=$LOCALE" > /etc/locale.conf

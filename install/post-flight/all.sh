@@ -22,7 +22,7 @@ print_title "Installing AUR helper"
 ./install-yay.sh
 
 print_title "Installing additional packages"
-./install-packages.sh
+#./install-packages.sh
 
 print_title "Setting Up User Account"
 ./user.sh
@@ -35,3 +35,6 @@ print_title "Setting Up Git"
 
 print_title "Enable Services"
 ./services.sh
+
+print_title "default Hyprland configuration"
+./hyprland.sh
