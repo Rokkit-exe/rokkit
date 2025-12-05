@@ -1,0 +1,97 @@
+#!/bin/bash
+
+languages=(
+  "bash" 
+  "go" 
+  "python" 
+  "js" 
+  "typescript"  
+  "lua"
+  "c" 
+  "cpp" 
+  "java" 
+  "rust" 
+  "php" 
+  "kotlin" 
+  "dart"
+  "csharp"
+)
+core_utils=(
+  "curl" 
+  "wget" 
+  "git" 
+  "docker"
+  "grep"
+  "ripgrep"
+  "cat"
+  "bat" 
+  "less" 
+  "head" 
+  "tail" 
+  "cut" 
+  "sort" 
+  "uniq"
+  "zoxide" 
+  "fd"
+  "sed" 
+  "awk" 
+  "jq" 
+  "awk"
+  "gum"
+  "find" 
+  "tar"
+  "btrfs"
+  "ext4"
+  "grub" 
+  "lsblk" 
+  "mount" 
+  "umount"
+  "limine" 
+  "dd" 
+  "fdisk" 
+  "parted" 
+  "mkfs" 
+  "fsck" 
+  "lsof" 
+  "ifconfig" 
+  "ping"
+  "zip" 
+  "unzip" 
+  "ssh" 
+  "rsync" 
+  "tmux" 
+  "htop" 
+  "tree" 
+  "top" 
+  "ps"
+  "zsh"
+  "bash"
+  "neovim"
+  "vim"
+  "netstat" 
+  "traceroute" 
+  "systemctl" 
+  "journalctl"
+)
+
+if ! command -v fzf &> /dev/null || ! command -v bat &> /dev/null; then
+  echo "fzf and bat are required to run this script. Please install them first."
+  exit 1
+fi
+
+# concatenate arrays and use fzf to select
+selected=$(printf "%s\n" "${languages[@]}" "${core_utils[@]}" | fzf )
+
+# prompt for search query
+read -r -p "query: " query
+
+# search cht.sh based on selection (language or core utility) and display with bat
+if printf "%s" "${languages[@]}" | grep -qs "$selected"; then
+  curl cht.sh/"$selected"/"$(echo "$query" | tr ' ' '+')" | bat --paging always --language "$selected" 
+else
+  curl cht.sh/"$selected"~"$(echo "$query" | tr ' ' '+')" | bat --paging always
+fi 
+
+
+
+
