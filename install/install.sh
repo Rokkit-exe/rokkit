@@ -6,7 +6,7 @@ echo "ROOT_DIR is $ROOT_DIR"
 source "${ROOT_DIR}/lib/print.sh"
 set -e
 
-cd pre-flight
+cd iso
 ./all.sh
 
 if [ ! -f "$ROOT_DIR/config/settings.conf" ]; then
@@ -28,7 +28,7 @@ cp -r "/usr/local/share/rokkit" "$ROOT_DIR_TARGET"
 
 print_title "Chrooting into the New System to Continue Setup"
 arch-chroot /mnt bash -c "
-  cd /work/rokkit/install/post-flight
+  cd /work/rokkit/install/chroot
   ./all.sh
 "
 

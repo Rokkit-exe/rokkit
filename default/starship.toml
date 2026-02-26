@@ -1,0 +1,105 @@
+add_newline = true
+command_timeout = 200
+#format = '[ ](bg:background)[  ](bg:background fg:grey)[$directory$git_branch$git_status](bg:background)$fill[ $dart$go$python$nodejs$jobs$cmd_duration$line_break$character](bg:background)'
+format = """
+[  ](bg:background)\
+[  ](bg:background fg:grey)\
+[$directory$git_branch$git_status](bg:background)\
+[](fg:background bg:none)\
+$fill\
+[](fg:background bg:none)\
+[ $dart$go$python$nodejs$jobs$cmd_duration ](bg:background)\
+$line_break$character\
+"""
+
+palette = 'tokyonight'
+
+[character]
+error_symbol = '[✗](bold red)'
+success_symbol = '[❯](bold green)'
+
+[fill]
+symbol = ' '
+
+[cmd_duration]
+min_time = 500
+format = '[ ](bg:background fg:grey)[$duration ]($style)'
+style = 'bg:background fg:bold grey'
+
+[directory]
+format = '[  $path]($style)[$read_only]($read_only_style) '
+style = 'bg:background fg:dark_blue'
+truncate_to_repo = false
+truncation_length = 10
+truncation_symbol = '…/'
+repo_root_style = 'bg:background fg:bold blue'
+repo_root_format = '[  $before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) '
+
+[git_branch]
+format = '[ ](bg:background fg:grey)[$symbol$branch(:$remote_branch)]($style) '
+symbol = '   '
+style = 'bg:background fg:green'
+
+[git_status]
+format     = '([$conflicted$stashed$modified$staged$untracked$ahead_behind]($style) )'
+style      = 'bg:background fg:yellow'
+ahead      = '[⇡${count} ](bg:background fg:blue)'
+diverged   = '⇡${ahead_count} ⇣${behind_count} '
+behind     = '[⇣${count} ](bg:background fg:yellow)'
+conflicted = '[${count} ](bg:background fg:red)'
+up_to_date = ''
+untracked  = '[?${count} ](bg:background fg:blue)'
+modified   = '[!${count} ](bg:background fg:yellow)'
+stashed    = '\$ '
+staged     = '+ '
+renamed    = '» '
+deleted    = '[✘ ](bg:background fg:blue)'
+
+[dart]
+format = '[ ](bg:background fg:grey)[$symbol $version]($style) '
+symbol = ' '
+style = 'bg:background fg:blue'
+detect_extensions = ['dart']
+detect_files = ['pubspec.yaml', 'pubspec.yml', 'pubspec.lock']
+
+[lua]
+format = '[ ](bg:background fg:grey)[$symbol $version]($style)'
+symbol = ' '
+style = 'bg:background fg:purple'
+detect_extensions = ['lua']
+
+[nodejs]
+format = '[ ](bg:background fg:grey)[$symbol $version]($style) '
+style = 'bg:background fg:green'
+symbol = ' '
+detect_extensions = ['js', 'ts', 'tsx']
+detect_files = ['package.json', 'package.lock']
+
+[golang]
+format = '[ ](bg:background fg:grey)[$symbol $version]($style) '
+style = 'bg:background fg:blue'
+symbol = ' '
+detect_extensions = ['go']
+detect_files = ['go.mod', 'go.sum']
+
+[python]
+format = '[ ](bg:background fg:grey)[$symbol $version]($style) '
+style = 'bg:background fg:yellow'
+symbol = ' '
+detect_extensions = ['py']
+
+
+[palettes.tokyonight]
+red = '#f7768e'
+orange = '#ff9e64'
+yellow = '#D1AA01'
+grey = '#797979'
+white = '#C7D0EE'
+green = '#5BCF02'
+blue = '#09A3EE'
+dark_blue = '#0580A6'
+cyan = '#7dcfff'
+purple = '#bb9af7'
+background = '#2F2F2F'
+
+

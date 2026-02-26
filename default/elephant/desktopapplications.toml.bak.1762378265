@@ -1,0 +1,6 @@
+icon = ""
+min_score = 0
+history = true
+history_when_empty = true
+show_actions = false
+window_integration = false

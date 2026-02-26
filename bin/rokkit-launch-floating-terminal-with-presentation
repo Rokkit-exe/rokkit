@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cmd="$*"
+exec setsid uwsm-app -- xdg-terminal-exec --app-id=org.rokkit.terminal --title=rokkit -e bash -c "rokkit-show-logo; $cmd; rokkit-show-done"

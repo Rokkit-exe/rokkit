@@ -1,0 +1,3 @@
+auto_detect_launch_prefix = true
+overload_local_env = false
+ignored_providers = []
